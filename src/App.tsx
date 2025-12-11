@@ -136,32 +136,27 @@ function App() {
 
     console.log('Found child:', child); // Debug log
 
+    // Check if child already has both parents
+    if (child.parent1Id && child.parent2Id) {
+      console.log('Child already has both parents'); // Debug log
+      showNotification('This person already has two parents assigned.', 'error');
+      return;
+    }
+
     // Create a new parent ancestor
     const parentData: Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'> = {};
     const newParent = storage.addAncestor(parentData);
 
     console.log('Created new parent:', newParent); // Debug log
 
-    // Get the updated child data after the parent was added (storage might have changed)
-    const updatedChild = storage.ancestors.find(a => a.id === childId);
-    if (!updatedChild) {
-      console.error('Updated child not found:', childId);
-      showNotification('Error: Updated child not found.', 'error');
-      return;
-    }
-
-    // Link the parent to the child
+    // Link the parent to the child using the current child data (not stale storage data)
     const updates: Partial<Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'>> = {};
-    if (!updatedChild.parent1Id) {
+    if (!child.parent1Id) {
       updates.parent1Id = newParent.id;
       console.log('Setting as parent1Id:', newParent.id); // Debug log
-    } else if (!updatedChild.parent2Id) {
+    } else if (!child.parent2Id) {
       updates.parent2Id = newParent.id;
       console.log('Setting as parent2Id:', newParent.id); // Debug log
-    } else {
-      console.log('Child already has both parents'); // Debug log
-      showNotification('This person already has two parents assigned.', 'error');
-      return;
     }
 
     console.log('Updating child with:', updates); // Debug log

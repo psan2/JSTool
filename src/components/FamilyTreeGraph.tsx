@@ -346,6 +346,16 @@ function buildTreeFromRoot(root: Ancestor, allAncestors: Ancestor[]) {
   // Start with root at generation 0
   addToGeneration(root, 0, generations, allAncestors, visited);
 
+  // Add any unconnected ancestors to generation 0 (spread them out horizontally)
+  const unconnectedAncestors = allAncestors.filter(a => !visited.has(a.id));
+  if (unconnectedAncestors.length > 0) {
+    if (!generations.has(0)) {
+      generations.set(0, []);
+    }
+    generations.get(0)!.push(...unconnectedAncestors);
+    unconnectedAncestors.forEach(a => visited.add(a.id));
+  }
+
   // Calculate positions
   let maxWidth = 0;
   let currentY = 400; // Start from bottom
