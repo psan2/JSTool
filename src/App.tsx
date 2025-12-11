@@ -104,6 +104,20 @@ function App() {
     }
   };
 
+  const handleUpdateChildren = (childId: string, parentIds: string[]) => {
+    const updates: Partial<Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'>> = {
+      parent1Id: parentIds[0] || undefined,
+      parent2Id: parentIds[1] || undefined,
+    };
+
+    const updated = storage.updateAncestor(childId, updates);
+    if (updated) {
+      showNotification('Parent relationships updated successfully!', 'success');
+    } else {
+      showNotification('Failed to update parent relationships.', 'error');
+    }
+  };
+
   return (
     <div className="container">
       <Header />
@@ -118,6 +132,7 @@ function App() {
         ancestors={storage.ancestors}
         onEditAncestor={handleEditAncestor}
         onDeleteAncestor={handleDeleteAncestor}
+        onUpdateChildren={handleUpdateChildren}
       />
 
       {isAncestorModalOpen && (
