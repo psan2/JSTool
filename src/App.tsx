@@ -1,21 +1,30 @@
 import React, { useState } from 'react';
-import { useStorage } from './hooks/useStorage';
 import { useNotification } from './hooks/useNotification';
+import { useFamilyTreeStorage } from './hooks/useFamilyTreeStorage';
+import { FamilyTreeService } from './services/FamilyTreeService';
 import { Ancestor } from './types';
+import { TypeGuards, ValidatedFormData } from './types/guards';
 import Header from './components/Header';
 import Controls from './components/Controls';
 import FamilyTreeGraph from './components/FamilyTreeGraph';
 import AncestorModal from './components/AncestorModal';
 import ImportExportModal from './components/ImportExportModal';
 import NotificationContainer from './components/NotificationContainer';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 function App() {
-  const storage = useStorage();
+  const storage = useFamilyTreeStorage();
   const { notifications, showNotification, removeNotification } = useNotification();
 
   const [isAncestorModalOpen, setIsAncestorModalOpen] = useState(false);
   const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
   const [editingAncestor, setEditingAncestor] = useState<Ancestor | null>(null);
+
+  // Handle any storage errors
+  if (storage.error) {
+    console.error('Storage error:', storage.error);
+    // Could show error notification or handle gracefully
+  }
 
   const handleAddAncestor = () => {
     setEditingAncestor(null);
@@ -38,19 +47,23 @@ function App() {
     }
   };
 
-  const handleSaveAncestor = (ancestorData: Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const handleSaveAncestor = (formData: ValidatedFormData) => {
     try {
-      // Extract children IDs if they exist
-      const selectedChildrenIds = (ancestorData as any).selectedChildrenIds as string[] || [];
+      // Extract children IDs with proper type checking
+      const selectedChildrenIds = formData.selectedChildrenIds || [];
+
+      if (!TypeGuards.isValidAncestorIdArray(selectedChildrenIds)) {
+        showNotification('Invalid children data.', 'error');
+        return;
+      }
 
       // Clean the ancestor data
-      const cleanAncestorData = { ...ancestorData };
-      delete (cleanAncestorData as any).selectedChildrenIds;
+      const { selectedChildrenIds: _, ...cleanAncestorData } = formData;
 
       let savedAncestor: Ancestor;
 
       if (editingAncestor) {
-        console.log('Updating existing ancestor:', editingAncestor.id); // Debug log
+        console.log('Updating existing ancestor:', editingAncestor.id);
         const updated = storage.updateAncestor(editingAncestor.id, cleanAncestorData);
         if (updated) {
           savedAncestor = updated;
@@ -60,16 +73,16 @@ function App() {
           return;
         }
       } else {
-        console.log('Adding new ancestor'); // Debug log
+        console.log('Adding new ancestor');
         savedAncestor = storage.addAncestor(cleanAncestorData);
         showNotification('Person added successfully!', 'success');
       }
 
-      // Handle children relationships
+      // Handle children relationships with proper validation
       if (selectedChildrenIds.length > 0) {
         selectedChildrenIds.forEach(childId => {
           const child = storage.ancestors.find(a => a.id === childId);
-          if (child) {
+          if (child && TypeGuards.isAncestor(child)) {
             // Check if we're already a parent
             const isCurrentlyParent = child.parent1Id === savedAncestor.id || child.parent2Id === savedAncestor.id;
 
@@ -120,7 +133,7 @@ function App() {
       setEditingAncestor(null);
     } catch (error) {
       console.error('Error saving ancestor:', error);
-      showNotification('Failed to save ancestor.', 'error');
+      showNotification('Failed to save person.', 'error');
     }
   };
 
@@ -235,50 +248,52 @@ function App() {
 
 
   return (
-    <div className="container">
-      <Header />
+    <ErrorBoundary>
+      <div className="container">
+        <Header />
 
-      <Controls
-        onAddAncestor={handleAddAncestor}
-        onImportExport={() => setIsImportExportModalOpen(true)}
-        onClearAll={handleClearAll}
-      />
-
-      <FamilyTreeGraph
-        ancestors={storage.ancestors}
-        onEditAncestor={handleEditAncestor}
-        onDeleteAncestor={handleDeleteAncestor}
-        onAddParent={handleAddParent}
-        onAddChild={handleAddChild}
-      />
-
-      {isAncestorModalOpen && (
-        <AncestorModal
-          ancestor={editingAncestor}
-          availablePartners={storage.ancestors}
-          onSave={handleSaveAncestor}
-          onClose={() => {
-            setIsAncestorModalOpen(false);
-            setEditingAncestor(null);
-          }}
+        <Controls
+          onAddAncestor={handleAddAncestor}
+          onImportExport={() => setIsImportExportModalOpen(true)}
+          onClearAll={handleClearAll}
         />
-      )}
 
-      {isImportExportModalOpen && (
-        <ImportExportModal
-          exportData={storage.exportAsBase64()}
-          onImport={handleImportData}
-          onCopyUrl={handleCopyUrl}
-          onCopyData={handleCopyData}
-          onClose={() => setIsImportExportModalOpen(false)}
+        <FamilyTreeGraph
+          ancestors={storage.ancestors}
+          onEditAncestor={handleEditAncestor}
+          onDeleteAncestor={handleDeleteAncestor}
+          onAddParent={handleAddParent}
+          onAddChild={handleAddChild}
         />
-      )}
 
-      <NotificationContainer
-        notifications={notifications}
-        onRemove={removeNotification}
-      />
-    </div>
+        {isAncestorModalOpen && (
+          <AncestorModal
+            ancestor={editingAncestor}
+            availablePartners={storage.ancestors}
+            onSave={handleSaveAncestor}
+            onClose={() => {
+              setIsAncestorModalOpen(false);
+              setEditingAncestor(null);
+            }}
+          />
+        )}
+
+        {isImportExportModalOpen && (
+          <ImportExportModal
+            exportData={storage.exportAsBase64()}
+            onImport={handleImportData}
+            onCopyUrl={handleCopyUrl}
+            onCopyData={handleCopyData}
+            onClose={() => setIsImportExportModalOpen(false)}
+          />
+        )}
+
+        <NotificationContainer
+          notifications={notifications}
+          onRemove={removeNotification}
+        />
+      </div>
+    </ErrorBoundary>
   );
 }
 
