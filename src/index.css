@@ -276,6 +276,17 @@ body {
     box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
 }
 
+/* Checkbox styling */
+.form-group input[type="checkbox"] {
+    width: auto;
+    margin-right: 8px;
+    transform: scale(1.2);
+}
+
+.form-group label input[type="checkbox"] {
+    margin-bottom: 0;
+}
+
 /* Fieldset styles */
 .fieldset {
     border: 1px solid #ddd;

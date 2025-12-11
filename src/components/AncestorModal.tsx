@@ -21,6 +21,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, onSave, onClose
   const [birthCountry, setBirthCountry] = useState('');
 
   // Death info
+  const [isAlive, setIsAlive] = useState(true);
   const [deathYear, setDeathYear] = useState('');
   const [deathMonth, setDeathMonth] = useState('');
   const [deathDay, setDeathDay] = useState('');
@@ -44,6 +45,8 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, onSave, onClose
       setBirthCountry(ancestor.birth?.country || '');
 
       // Death info
+      const hasDeathInfo = ancestor.death && (ancestor.death.date || ancestor.death.country);
+      setIsAlive(!hasDeathInfo);
       setDeathYear(ancestor.death?.date?.year?.toString() || '');
       setDeathMonth(ancestor.death?.date?.month?.toString() || '');
       setDeathDay(ancestor.death?.date?.day?.toString() || '');
@@ -62,6 +65,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, onSave, onClose
       setBirthMonth('');
       setBirthDay('');
       setBirthCountry('');
+      setIsAlive(true);
       setDeathYear('');
       setDeathMonth('');
       setDeathDay('');
@@ -113,7 +117,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, onSave, onClose
       marriages: marriages.filter(Boolean),
       divorces: divorces.filter(Boolean),
       naturalizations: naturalizations.filter(Boolean),
-      death: createLocationEvent(deathYear, deathMonth, deathDay, deathCountry),
+      death: isAlive ? undefined : createLocationEvent(deathYear, deathMonth, deathDay, deathCountry),
     };
 
     onSave(ancestorData);
@@ -292,43 +296,57 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, onSave, onClose
           </button>
         </fieldset>
 
-        <fieldset className="fieldset">
-          <legend>Death Information</legend>
-          <div className="date-input-group">
-            <label>Year:</label>
+        <div className="form-group">
+          <label>
             <input
-              type="number"
-              value={deathYear}
-              onChange={(e) => setDeathYear(e.target.value)}
-              min="1800"
-              max="2024"
+              type="checkbox"
+              checked={isAlive}
+              onChange={(e) => setIsAlive(e.target.checked)}
+              style={{ marginRight: '8px' }}
             />
-            <label>Month:</label>
-            <input
-              type="number"
-              value={deathMonth}
-              onChange={(e) => setDeathMonth(e.target.value)}
-              min="1"
-              max="12"
-            />
-            <label>Day:</label>
-            <input
-              type="number"
-              value={deathDay}
-              onChange={(e) => setDeathDay(e.target.value)}
-              min="1"
-              max="31"
-            />
-          </div>
-          <div className="form-group">
-            <label>Country:</label>
-            <input
-              type="text"
-              value={deathCountry}
-              onChange={(e) => setDeathCountry(e.target.value)}
-            />
-          </div>
-        </fieldset>
+            Alive
+          </label>
+        </div>
+
+        {!isAlive && (
+          <fieldset className="fieldset">
+            <legend>Death Information</legend>
+            <div className="date-input-group">
+              <label>Year:</label>
+              <input
+                type="number"
+                value={deathYear}
+                onChange={(e) => setDeathYear(e.target.value)}
+                min="1800"
+                max="2024"
+              />
+              <label>Month:</label>
+              <input
+                type="number"
+                value={deathMonth}
+                onChange={(e) => setDeathMonth(e.target.value)}
+                min="1"
+                max="12"
+              />
+              <label>Day:</label>
+              <input
+                type="number"
+                value={deathDay}
+                onChange={(e) => setDeathDay(e.target.value)}
+                min="1"
+                max="31"
+              />
+            </div>
+            <div className="form-group">
+              <label>Country:</label>
+              <input
+                type="text"
+                value={deathCountry}
+                onChange={(e) => setDeathCountry(e.target.value)}
+              />
+            </div>
+          </fieldset>
+        )}
 
         <div className="form-actions">
           <button type="submit" className="btn btn-primary">
