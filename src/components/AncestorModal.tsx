@@ -266,22 +266,11 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
         return false; // Already has 2 parents and we're not one of them
       }
 
-      // Birth date validation - child should be born after parent
+      // Birth date validation - parents must be older than children
       const childBirthYear = potentialChild.birth?.date?.year;
       if (currentAncestorBirthYear && childBirthYear) {
         if (childBirthYear <= currentAncestorBirthYear) {
           return false; // Child was born before or same year as potential parent
-        }
-
-        // Minimum age gap of 15 years (reasonable minimum parenting age)
-        const ageGap = childBirthYear - currentAncestorBirthYear;
-        if (ageGap < 15) {
-          return false; // Too small age gap to be realistic parent-child
-        }
-
-        // Maximum age gap of 60 years (reasonable maximum parenting age)
-        if (ageGap > 60) {
-          return false; // Too large age gap to be realistic parent-child
         }
       }
 
@@ -622,7 +611,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
           {getEligibleChildren().length === 0 && (
             <div className="form-group">
               <p style={{ fontStyle: 'italic', color: '#666' }}>
-                No eligible children available. Children must be born at least 15 years after this person and have fewer than 2 parents already assigned.
+                No eligible children available. Parents must be older than their children and children can have at most 2 parents.
               </p>
             </div>
           )}
