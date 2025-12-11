@@ -5,11 +5,12 @@ import EventEntry from './EventEntry';
 
 interface AncestorModalProps {
   ancestor: Ancestor | null;
+  availablePartners: Ancestor[];
   onSave: (ancestorData: Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'>) => void;
   onClose: () => void;
 }
 
-const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, onSave, onClose }) => {
+const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartners, onSave, onClose }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [relationship, setRelationship] = useState<RelationshipLevel | ''>('');
@@ -257,6 +258,9 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, onSave, onClose
               event={marriage}
               onChange={(event) => updateMarriage(index, event)}
               onRemove={() => removeMarriage(index)}
+              showPartnerSelector={true}
+              availablePartners={availablePartners}
+              currentAncestorId={ancestor?.id}
             />
           ))}
           <button type="button" className="btn btn-secondary btn-small" onClick={addMarriage}>
@@ -273,6 +277,9 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, onSave, onClose
               event={divorce}
               onChange={(event) => updateDivorce(index, event)}
               onRemove={() => removeDivorce(index)}
+              showPartnerSelector={true}
+              availablePartners={availablePartners}
+              currentAncestorId={ancestor?.id}
             />
           ))}
           <button type="button" className="btn btn-secondary btn-small" onClick={addDivorce}>

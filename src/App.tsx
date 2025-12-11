@@ -123,6 +123,7 @@ function App() {
       {isAncestorModalOpen && (
         <AncestorModal
           ancestor={editingAncestor}
+          availablePartners={storage.ancestors}
           onSave={handleSaveAncestor}
           onClose={() => {
             setIsAncestorModalOpen(false);

@@ -38,6 +38,7 @@ const FamilyTree: React.FC<FamilyTreeProps> = ({ ancestors, onEditAncestor, onDe
           <AncestorCard
             key={ancestor.id}
             ancestor={ancestor}
+            allAncestors={ancestors}
             onEdit={onEditAncestor}
             onDelete={onDeleteAncestor}
           />

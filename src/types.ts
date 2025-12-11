@@ -9,6 +9,7 @@ export interface PartialDate {
 export interface LocationEvent {
     date?: PartialDate;
     country?: string;
+    partnerId?: string; // ID of the partner in this marriage/divorce
 }
 
 export interface Ancestor {

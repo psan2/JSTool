@@ -3,11 +3,12 @@ import { Ancestor, LocationEvent, PartialDate } from '../types';
 
 interface AncestorCardProps {
   ancestor: Ancestor;
+  allAncestors: Ancestor[];
   onEdit: (ancestor: Ancestor) => void;
   onDelete: (id: string) => void;
 }
 
-const AncestorCard: React.FC<AncestorCardProps> = ({ ancestor, onEdit, onDelete }) => {
+const AncestorCard: React.FC<AncestorCardProps> = ({ ancestor, allAncestors, onEdit, onDelete }) => {
   const getDisplayName = (ancestor: Ancestor): string => {
     if (ancestor.firstName || ancestor.lastName) {
       return `${ancestor.firstName || ''} ${ancestor.lastName || ''}`.trim();
@@ -50,7 +51,7 @@ const AncestorCard: React.FC<AncestorCardProps> = ({ ancestor, onEdit, onDelete 
     );
   };
 
-  const createMultipleEventDetails = (eventName: string, events?: LocationEvent[]) => {
+  const createMultipleEventDetails = (eventName: string, events?: LocationEvent[], allAncestors?: Ancestor[]) => {
     if (!events || events.length === 0) {
       return null;
     }
@@ -59,7 +60,19 @@ const AncestorCard: React.FC<AncestorCardProps> = ({ ancestor, onEdit, onDelete 
       const dateStr = formatPartialDate(event.date);
       const countryStr = event.country || '';
 
-      if (!dateStr && !countryStr) {
+      // Find partner name if partnerId exists
+      let partnerStr = '';
+      if (event.partnerId && allAncestors) {
+        const partner = allAncestors.find(a => a.id === event.partnerId);
+        if (partner) {
+          const partnerName = partner.firstName || partner.lastName
+            ? `${partner.firstName || ''} ${partner.lastName || ''}`.trim()
+            : partner.relationship.charAt(0).toUpperCase() + partner.relationship.slice(1).replace('-', ' ');
+          partnerStr = ` to ${partnerName}`;
+        }
+      }
+
+      if (!dateStr && !countryStr && !partnerStr) {
         return null;
       }
 
@@ -68,6 +81,7 @@ const AncestorCard: React.FC<AncestorCardProps> = ({ ancestor, onEdit, onDelete 
           <strong>{eventName.slice(0, -1)} {index + 1}:</strong>
           {dateStr && ` ${dateStr}`}
           {countryStr && ` (${countryStr})`}
+          {partnerStr}
         </div>
       );
     }).filter(Boolean);
@@ -108,8 +122,8 @@ const AncestorCard: React.FC<AncestorCardProps> = ({ ancestor, onEdit, onDelete 
       </div>
       <div className="ancestor-details">
         {createEventDetail('Birth', ancestor.birth)}
-        {createMultipleEventDetails('Marriages', ancestor.marriages)}
-        {createMultipleEventDetails('Divorces', ancestor.divorces)}
+        {createMultipleEventDetails('Marriages', ancestor.marriages, allAncestors)}
+        {createMultipleEventDetails('Divorces', ancestor.divorces, allAncestors)}
         {createMultipleEventDetails('Naturalizations', ancestor.naturalizations)}
         {createEventDetail('Death', ancestor.death)}
       </div>

@@ -1,31 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { LocationEvent } from '../types';
+import { LocationEvent, Ancestor } from '../types';
 
 interface EventEntryProps {
   title: string;
   event: LocationEvent;
   onChange: (event: LocationEvent) => void;
   onRemove: () => void;
+  showPartnerSelector?: boolean;
+  availablePartners?: Ancestor[];
+  currentAncestorId?: string;
 }
 
-const EventEntry: React.FC<EventEntryProps> = ({ title, event, onChange, onRemove }) => {
+const EventEntry: React.FC<EventEntryProps> = ({
+  title,
+  event,
+  onChange,
+  onRemove,
+  showPartnerSelector = false,
+  availablePartners = [],
+  currentAncestorId
+}) => {
   const [year, setYear] = useState('');
   const [month, setMonth] = useState('');
   const [day, setDay] = useState('');
   const [country, setCountry] = useState('');
+  const [partnerId, setPartnerId] = useState('');
 
   useEffect(() => {
     setYear(event.date?.year?.toString() || '');
     setMonth(event.date?.month?.toString() || '');
     setDay(event.date?.day?.toString() || '');
     setCountry(event.country || '');
+    setPartnerId(event.partnerId || '');
   }, [event]);
 
   const updateEvent = () => {
     const hasDate = year || month || day;
     const hasCountry = country && country.trim();
+    const hasPartner = partnerId && partnerId.trim();
 
-    if (!hasDate && !hasCountry) {
+    if (!hasDate && !hasCountry && !hasPartner) {
       onChange({});
       return;
     }
@@ -44,12 +58,16 @@ const EventEntry: React.FC<EventEntryProps> = ({ title, event, onChange, onRemov
       newEvent.country = country.trim();
     }
 
+    if (hasPartner) {
+      newEvent.partnerId = partnerId.trim();
+    }
+
     onChange(newEvent);
   };
 
   useEffect(() => {
     updateEvent();
-  }, [year, month, day, country]);
+  }, [year, month, day, country, partnerId]);
 
   return (
     <div className="event-entry">
@@ -93,6 +111,29 @@ const EventEntry: React.FC<EventEntryProps> = ({ title, event, onChange, onRemov
           onChange={(e) => setCountry(e.target.value)}
         />
       </div>
+      {showPartnerSelector && (
+        <div className="form-group">
+          <label>Partner (optional):</label>
+          <select
+            value={partnerId}
+            onChange={(e) => setPartnerId(e.target.value)}
+          >
+            <option value="">Select partner (optional)</option>
+            {availablePartners
+              .filter(partner => partner.id !== currentAncestorId)
+              .map(partner => {
+                const displayName = partner.firstName || partner.lastName
+                  ? `${partner.firstName || ''} ${partner.lastName || ''}`.trim()
+                  : partner.relationship.charAt(0).toUpperCase() + partner.relationship.slice(1).replace('-', ' ');
+                return (
+                  <option key={partner.id} value={partner.id}>
+                    {displayName}
+                  </option>
+                );
+              })}
+          </select>
+        </div>
+      )}
     </div>
   );
 };
