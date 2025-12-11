@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LocationEvent, Ancestor } from '../types';
 
 interface EventEntryProps {
@@ -25,112 +25,101 @@ const EventEntry: React.FC<EventEntryProps> = ({
   const [day, setDay] = useState('');
   const [country, setCountry] = useState('');
   const [partnerId, setPartnerId] = useState('');
-  const isInitialLoad = useRef(true);
 
+  // Initialize state from event prop
   useEffect(() => {
     setYear(event.date?.year?.toString() || '');
     setMonth(event.date?.month?.toString() || '');
     setDay(event.date?.day?.toString() || '');
     setCountry(event.country || '');
     setPartnerId(event.partnerId || '');
-    isInitialLoad.current = true;
   }, [event]);
 
-  const validateAndFormatValue = (field: string, value: string): string => {
-    if (!value) return '';
+  const buildEventFromState = (newYear?: string, newMonth?: string, newDay?: string, newCountry?: string, newPartnerId?: string): LocationEvent => {
+    const currentYear = newYear !== undefined ? newYear : year;
+    const currentMonth = newMonth !== undefined ? newMonth : month;
+    const currentDay = newDay !== undefined ? newDay : day;
+    const currentCountry = newCountry !== undefined ? newCountry : country;
+    const currentPartnerId = newPartnerId !== undefined ? newPartnerId : partnerId;
 
-    switch (field) {
-      case 'year':
-        // Handle year validation more carefully
-        const yearStr = value.toString();
-        const yearNum = parseInt(yearStr);
-
-        // If it's a valid 4-digit year, return it as-is
-        if (yearStr.length === 4 && yearNum >= 1800 && yearNum <= 2024) {
-          return yearStr;
-        }
-
-        // If it's a partial year being typed, allow it
-        if (yearStr.length < 4 && yearNum > 0) {
-          return yearStr;
-        }
-
-        // If it's invalid, keep the previous value
-        return year;
-      case 'month':
-        // Ensure 1-2 digits for month
-        const monthNum = parseInt(value);
-        if (monthNum < 1 || monthNum > 12) return month; // Keep previous value if invalid
-        return monthNum.toString();
-      case 'day':
-        // Ensure 1-2 digits for day
-        const dayNum = parseInt(value);
-        if (dayNum < 1 || dayNum > 31) return day; // Keep previous value if invalid
-        return dayNum.toString();
-      default:
-        return value;
-    }
-  };
-
-  const handleFieldChange = (field: string, value: string) => {
-    // Validate and format the value
-    const validatedValue = validateAndFormatValue(field, value);
-
-    // Update the appropriate state
-    switch (field) {
-      case 'year':
-        setYear(validatedValue);
-        break;
-      case 'month':
-        setMonth(validatedValue);
-        break;
-      case 'day':
-        setDay(validatedValue);
-        break;
-      case 'country':
-        setCountry(value);
-        break;
-      case 'partnerId':
-        setPartnerId(value);
-        break;
-    }
-
-    // Skip onChange call during initial load
-    if (isInitialLoad.current) {
-      isInitialLoad.current = false;
-      return;
-    }
-
-    // Build the new event with the updated value
-    const newYear = field === 'year' ? validatedValue : year;
-    const newMonth = field === 'month' ? validatedValue : month;
-    const newDay = field === 'day' ? validatedValue : day;
-    const newCountry = field === 'country' ? value : country;
-    const newPartnerId = field === 'partnerId' ? value : partnerId;
-
-    const hasDate = newYear || newMonth || newDay;
-    const hasCountry = newCountry && newCountry.trim();
-    const hasPartner = newPartnerId && newPartnerId.trim();
+    const hasDate = currentYear || currentMonth || currentDay;
+    const hasCountry = currentCountry && currentCountry.trim();
+    const hasPartner = currentPartnerId && currentPartnerId.trim();
 
     const newEvent: LocationEvent = {};
 
     if (hasDate) {
       const date: any = {};
-      if (newYear) date.year = parseInt(newYear);
-      if (newMonth) date.month = parseInt(newMonth);
-      if (newDay) date.day = parseInt(newDay);
+      if (currentYear) date.year = parseInt(currentYear);
+      if (currentMonth) date.month = parseInt(currentMonth);
+      if (currentDay) date.day = parseInt(currentDay);
       newEvent.date = date;
     }
 
     if (hasCountry) {
-      newEvent.country = newCountry.trim();
+      newEvent.country = currentCountry.trim();
     }
 
     if (hasPartner) {
-      newEvent.partnerId = newPartnerId.trim();
+      newEvent.partnerId = currentPartnerId.trim();
     }
 
-    onChange(newEvent);
+    return newEvent;
+  };
+
+  const validateDateValue = (field: string, value: string): string => {
+    if (!value) return '';
+
+    switch (field) {
+      case 'year':
+        const yearNum = parseInt(value);
+        // Allow partial years while typing, but validate complete years
+        if (value.length <= 4 && yearNum > 0) {
+          if (value.length === 4 && (yearNum < 1800 || yearNum > 2024)) {
+            return year; // Keep previous if invalid complete year
+          }
+          return value;
+        }
+        return year;
+      case 'month':
+        const monthNum = parseInt(value);
+        if (monthNum >= 1 && monthNum <= 12) return value;
+        return month;
+      case 'day':
+        const dayNum = parseInt(value);
+        if (dayNum >= 1 && dayNum <= 31) return value;
+        return day;
+      default:
+        return value;
+    }
+  };
+
+  const handleYearChange = (value: string) => {
+    const validatedValue = validateDateValue('year', value);
+    setYear(validatedValue);
+    onChange(buildEventFromState(validatedValue));
+  };
+
+  const handleMonthChange = (value: string) => {
+    const validatedValue = validateDateValue('month', value);
+    setMonth(validatedValue);
+    onChange(buildEventFromState(undefined, validatedValue));
+  };
+
+  const handleDayChange = (value: string) => {
+    const validatedValue = validateDateValue('day', value);
+    setDay(validatedValue);
+    onChange(buildEventFromState(undefined, undefined, validatedValue));
+  };
+
+  const handleCountryChange = (value: string) => {
+    setCountry(value);
+    onChange(buildEventFromState(undefined, undefined, undefined, value));
+  };
+
+  const handlePartnerChange = (value: string) => {
+    setPartnerId(value);
+    onChange(buildEventFromState(undefined, undefined, undefined, undefined, value));
   };
 
   return (
@@ -146,31 +135,28 @@ const EventEntry: React.FC<EventEntryProps> = ({
         <input
           type="number"
           value={year}
-          onChange={(e) => handleFieldChange('year', e.target.value)}
+          onChange={(e) => handleYearChange(e.target.value)}
           min="1800"
           max="2024"
           placeholder="YYYY"
-          maxLength={4}
         />
         <label>Month:</label>
         <input
           type="number"
           value={month}
-          onChange={(e) => handleFieldChange('month', e.target.value)}
+          onChange={(e) => handleMonthChange(e.target.value)}
           min="1"
           max="12"
           placeholder="MM"
-          maxLength={2}
         />
         <label>Day:</label>
         <input
           type="number"
           value={day}
-          onChange={(e) => handleFieldChange('day', e.target.value)}
+          onChange={(e) => handleDayChange(e.target.value)}
           min="1"
           max="31"
           placeholder="DD"
-          maxLength={2}
         />
       </div>
       <div className="form-group">
@@ -178,7 +164,7 @@ const EventEntry: React.FC<EventEntryProps> = ({
         <input
           type="text"
           value={country}
-          onChange={(e) => handleFieldChange('country', e.target.value)}
+          onChange={(e) => handleCountryChange(e.target.value)}
         />
       </div>
       {showPartnerSelector && (
@@ -186,7 +172,7 @@ const EventEntry: React.FC<EventEntryProps> = ({
           <label>Partner (optional):</label>
           <select
             value={partnerId}
-            onChange={(e) => handleFieldChange('partnerId', e.target.value)}
+            onChange={(e) => handlePartnerChange(e.target.value)}
           >
             <option value="">Select partner (optional)</option>
             {availablePartners
