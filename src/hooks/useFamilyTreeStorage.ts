@@ -71,8 +71,8 @@ export const useFamilyTreeStorage = () => {
     }
   }, [state.data]);
 
-  // CRUD operations
-  const addAncestor = (ancestorData: Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'>): Ancestor => {
+  // CRUD operations with immediate state updates
+  const addAncestor = (ancestorData: Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'>): { ancestor: Ancestor; updatedAncestors: Ancestor[] } => {
     const now = Date.now();
     const newAncestor: Ancestor = {
       ...ancestorData,
@@ -96,16 +96,19 @@ export const useFamilyTreeStorage = () => {
       }
     });
 
-    return newAncestor;
+    return { ancestor: newAncestor, updatedAncestors };
   };
 
-  const updateAncestor = (id: string, updates: Partial<Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'>>): Ancestor | null => {
+  const updateAncestor = (id: string, updates: Partial<Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'>>, currentAncestors?: Ancestor[]): Ancestor | null => {
     if (!TypeGuards.isValidAncestorId(id)) {
       console.error('Invalid ancestor ID:', id);
       return null;
     }
 
-    const existingAncestor = ancestors.find(a => a.id === id);
+    // Use provided ancestors or current state
+    const ancestorsToUse = currentAncestors || ancestors;
+    const existingAncestor = ancestorsToUse.find(a => a.id === id);
+
     if (!existingAncestor) {
       console.error('Ancestor not found:', id);
       return null;
@@ -118,7 +121,7 @@ export const useFamilyTreeStorage = () => {
     };
 
     // Handle bidirectional relationships
-    const updatedAncestors = ancestors.map(a => a.id === id ? updatedAncestor : a);
+    const updatedAncestors = ancestorsToUse.map(a => a.id === id ? updatedAncestor : a);
     const finalAncestors = FamilyTreeService.updateBidirectionalRelationships(updatedAncestors, updatedAncestor);
 
     dispatch({

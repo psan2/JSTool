@@ -74,7 +74,8 @@ function App() {
         }
       } else {
         console.log('Adding new ancestor');
-        savedAncestor = storage.addAncestor(cleanAncestorData);
+        const result = storage.addAncestor(cleanAncestorData);
+        savedAncestor = result.ancestor;
         showNotification('Person added successfully!', 'success');
       }
 
@@ -158,11 +159,13 @@ function App() {
 
     // Create a new parent ancestor
     const parentData: Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'> = {};
-    const newParent = storage.addAncestor(parentData);
+    const parentResult = storage.addAncestor(parentData);
+    const newParent = parentResult.ancestor;
+    const updatedAncestorsAfterParentAdd = parentResult.updatedAncestors;
 
     console.log('Created new parent:', newParent); // Debug log
 
-    // Link the parent to the child using the current child data (not stale storage data)
+    // Link the parent to the child using the updated ancestors array (not stale storage data)
     const updates: Partial<Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'>> = {};
     if (!child.parent1Id) {
       updates.parent1Id = newParent.id;
@@ -173,7 +176,7 @@ function App() {
     }
 
     console.log('Updating child with:', updates); // Debug log
-    const updateResult = storage.updateAncestor(childId, updates);
+    const updateResult = storage.updateAncestor(childId, updates, updatedAncestorsAfterParentAdd);
 
     if (!updateResult) {
       console.error('Failed to update child ancestor'); // Debug log
@@ -193,7 +196,8 @@ function App() {
     const childData: Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'> = {
       parent1Id: parentId
     };
-    const newChild = storage.addAncestor(childData);
+    const result = storage.addAncestor(childData);
+    const newChild = result.ancestor;
 
     // Open the edit modal for the new child
     setEditingAncestor(newChild);
