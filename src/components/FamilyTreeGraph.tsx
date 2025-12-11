@@ -82,11 +82,13 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
   }, [ancestors]);
 
   const getDisplayName = (ancestor: Ancestor): string => {
-    if (ancestor.firstName || ancestor.lastName) {
-      return `${ancestor.firstName || ''} ${ancestor.lastName || ''}`.trim();
+    // Always prioritize actual names if they exist
+    const fullName = `${ancestor.firstName || ''} ${ancestor.lastName || ''}`.trim();
+    if (fullName) {
+      return fullName;
     }
 
-    // Find self to infer relationship
+    // Only show relationship if no name is provided
     const selfPerson = ancestors.find(a => !a.parent1Id && !a.parent2Id) || ancestors[0];
     const relationship = inferRelationship(ancestor, ancestors, selfPerson.id);
     return relationship;
