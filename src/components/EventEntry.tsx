@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LocationEvent, Ancestor } from '../types';
+import CountryAutocomplete from './CountryAutocomplete';
 
 interface EventEntryProps {
   title: string;
@@ -161,10 +162,10 @@ const EventEntry: React.FC<EventEntryProps> = ({
       </div>
       <div className="form-group">
         <label>Country:</label>
-        <input
-          type="text"
+        <CountryAutocomplete
           value={country}
-          onChange={(e) => handleCountryChange(e.target.value)}
+          onChange={handleCountryChange}
+          placeholder="Enter country"
         />
       </div>
       {showPartnerSelector && (

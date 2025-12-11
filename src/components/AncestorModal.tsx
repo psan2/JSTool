@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Ancestor, LocationEvent } from "../types";
 import EventEntry from "./EventEntry";
 import Modal from "./Modal";
+import CountryAutocomplete from "./CountryAutocomplete";
 
 interface AncestorModalProps {
   ancestor: Ancestor | null;
@@ -423,10 +424,10 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
           </div>
           <div className="form-group">
             <label>Country:</label>
-            <input
-              type="text"
+            <CountryAutocomplete
               value={birthCountry}
-              onChange={(e) => setBirthCountry(e.target.value)}
+              onChange={setBirthCountry}
+              placeholder="Enter birth country"
             />
           </div>
         </fieldset>
@@ -558,10 +559,10 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
             </div>
             <div className="form-group">
               <label>Country:</label>
-              <input
-                type="text"
+              <CountryAutocomplete
                 value={deathCountry}
-                onChange={(e) => setDeathCountry(e.target.value)}
+                onChange={setDeathCountry}
+                placeholder="Enter death country"
               />
             </div>
           </fieldset>
