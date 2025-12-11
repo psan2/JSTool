@@ -172,7 +172,11 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
                   r="12"
                   fill="#27ae60"
                   style={{ cursor: 'pointer' }}
-                  onClick={() => onAddParent(node.ancestor.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    console.log('Add parent button clicked for:', node.ancestor.id); // Debug log
+                    onAddParent(node.ancestor.id);
+                  }}
                 />
                 <text
                   x={node.x}
@@ -181,7 +185,11 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
                   fontSize="16"
                   fill="white"
                   style={{ cursor: 'pointer', userSelect: 'none' }}
-                  onClick={() => onAddParent(node.ancestor.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    console.log('Add parent text clicked for:', node.ancestor.id); // Debug log
+                    onAddParent(node.ancestor.id);
+                  }}
                 >
                   +
                 </text>
@@ -232,7 +240,11 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
                   r="10"
                   fill="#3498db"
                   style={{ cursor: 'pointer' }}
-                  onClick={() => onEditAncestor(node.ancestor)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    console.log('Edit button clicked for:', node.ancestor.id); // Debug log
+                    onEditAncestor(node.ancestor);
+                  }}
                 />
                 <text
                   x={node.x + nodeWidth / 2 - 15}
@@ -241,7 +253,11 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
                   fontSize="10"
                   fill="white"
                   style={{ cursor: 'pointer', userSelect: 'none' }}
-                  onClick={() => onEditAncestor(node.ancestor)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    console.log('Edit text clicked for:', node.ancestor.id); // Debug log
+                    onEditAncestor(node.ancestor);
+                  }}
                 >
                   ✎
                 </text>

@@ -23,6 +23,7 @@ function App() {
   };
 
   const handleEditAncestor = (ancestor: Ancestor) => {
+    console.log('Editing ancestor:', ancestor); // Debug log
     setEditingAncestor(ancestor);
     setIsAncestorModalOpen(true);
   };
@@ -49,17 +50,19 @@ function App() {
       let savedAncestor: Ancestor;
 
       if (editingAncestor) {
+        console.log('Updating existing ancestor:', editingAncestor.id); // Debug log
         const updated = storage.updateAncestor(editingAncestor.id, cleanAncestorData);
         if (updated) {
           savedAncestor = updated;
-          showNotification('Ancestor updated successfully!', 'success');
+          showNotification('Person updated successfully!', 'success');
         } else {
-          showNotification('Failed to update ancestor.', 'error');
+          showNotification('Failed to update person.', 'error');
           return;
         }
       } else {
+        console.log('Adding new ancestor'); // Debug log
         savedAncestor = storage.addAncestor(cleanAncestorData);
-        showNotification('Ancestor added successfully!', 'success');
+        showNotification('Person added successfully!', 'success');
       }
 
       // Handle children relationships
