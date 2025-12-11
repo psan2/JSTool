@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { LocationEvent, Ancestor } from '../types';
 
 interface EventEntryProps {
@@ -25,6 +25,7 @@ const EventEntry: React.FC<EventEntryProps> = ({
   const [day, setDay] = useState('');
   const [country, setCountry] = useState('');
   const [partnerId, setPartnerId] = useState('');
+  const isInitialLoad = useRef(true);
 
   useEffect(() => {
     setYear(event.date?.year?.toString() || '');
@@ -32,39 +33,66 @@ const EventEntry: React.FC<EventEntryProps> = ({
     setDay(event.date?.day?.toString() || '');
     setCountry(event.country || '');
     setPartnerId(event.partnerId || '');
+    isInitialLoad.current = true;
   }, [event]);
 
-  useEffect(() => {
-    const hasDate = year || month || day;
-    const hasCountry = country && country.trim();
-    const hasPartner = partnerId && partnerId.trim();
+  const handleFieldChange = (field: string, value: string) => {
+    // Update the appropriate state
+    switch (field) {
+      case 'year':
+        setYear(value);
+        break;
+      case 'month':
+        setMonth(value);
+        break;
+      case 'day':
+        setDay(value);
+        break;
+      case 'country':
+        setCountry(value);
+        break;
+      case 'partnerId':
+        setPartnerId(value);
+        break;
+    }
+
+    // Skip onChange call during initial load
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      return;
+    }
+
+    // Build the new event with the updated value
+    const newYear = field === 'year' ? value : year;
+    const newMonth = field === 'month' ? value : month;
+    const newDay = field === 'day' ? value : day;
+    const newCountry = field === 'country' ? value : country;
+    const newPartnerId = field === 'partnerId' ? value : partnerId;
+
+    const hasDate = newYear || newMonth || newDay;
+    const hasCountry = newCountry && newCountry.trim();
+    const hasPartner = newPartnerId && newPartnerId.trim();
 
     const newEvent: LocationEvent = {};
 
     if (hasDate) {
       const date: any = {};
-      if (year) date.year = parseInt(year);
-      if (month) date.month = parseInt(month);
-      if (day) date.day = parseInt(day);
+      if (newYear) date.year = parseInt(newYear);
+      if (newMonth) date.month = parseInt(newMonth);
+      if (newDay) date.day = parseInt(newDay);
       newEvent.date = date;
     }
 
     if (hasCountry) {
-      newEvent.country = country.trim();
+      newEvent.country = newCountry.trim();
     }
 
     if (hasPartner) {
-      newEvent.partnerId = partnerId.trim();
+      newEvent.partnerId = newPartnerId.trim();
     }
 
-    // Only call onChange if there's actual data or if we need to clear it
-    const hasAnyData = hasDate || hasCountry || hasPartner;
-    const currentEventHasData = event.date || event.country || event.partnerId;
-
-    if (hasAnyData || currentEventHasData) {
-      onChange(newEvent);
-    }
-  }, [year, month, day, country, partnerId]);
+    onChange(newEvent);
+  };
 
   return (
     <div className="event-entry">
@@ -79,7 +107,7 @@ const EventEntry: React.FC<EventEntryProps> = ({
         <input
           type="number"
           value={year}
-          onChange={(e) => setYear(e.target.value)}
+          onChange={(e) => handleFieldChange('year', e.target.value)}
           min="1800"
           max="2024"
         />
@@ -87,7 +115,7 @@ const EventEntry: React.FC<EventEntryProps> = ({
         <input
           type="number"
           value={month}
-          onChange={(e) => setMonth(e.target.value)}
+          onChange={(e) => handleFieldChange('month', e.target.value)}
           min="1"
           max="12"
         />
@@ -95,7 +123,7 @@ const EventEntry: React.FC<EventEntryProps> = ({
         <input
           type="number"
           value={day}
-          onChange={(e) => setDay(e.target.value)}
+          onChange={(e) => handleFieldChange('day', e.target.value)}
           min="1"
           max="31"
         />
@@ -105,7 +133,7 @@ const EventEntry: React.FC<EventEntryProps> = ({
         <input
           type="text"
           value={country}
-          onChange={(e) => setCountry(e.target.value)}
+          onChange={(e) => handleFieldChange('country', e.target.value)}
         />
       </div>
       {showPartnerSelector && (
@@ -113,7 +141,7 @@ const EventEntry: React.FC<EventEntryProps> = ({
           <label>Partner (optional):</label>
           <select
             value={partnerId}
-            onChange={(e) => setPartnerId(e.target.value)}
+            onChange={(e) => handleFieldChange('partnerId', e.target.value)}
           >
             <option value="">Select partner (optional)</option>
             {availablePartners
