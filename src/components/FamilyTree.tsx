@@ -6,10 +6,9 @@ interface FamilyTreeProps {
   ancestors: Ancestor[];
   onEditAncestor: (ancestor: Ancestor) => void;
   onDeleteAncestor: (id: string) => void;
-  onUpdateChildren: (ancestorId: string, childIds: string[]) => void;
 }
 
-const FamilyTree: React.FC<FamilyTreeProps> = ({ ancestors, onEditAncestor, onDeleteAncestor, onUpdateChildren }) => {
+const FamilyTree: React.FC<FamilyTreeProps> = ({ ancestors, onEditAncestor, onDeleteAncestor }) => {
   if (ancestors.length === 0) {
     return (
       <div className="family-tree">
@@ -42,7 +41,6 @@ const FamilyTree: React.FC<FamilyTreeProps> = ({ ancestors, onEditAncestor, onDe
             allAncestors={ancestors}
             onEdit={onEditAncestor}
             onDelete={onDeleteAncestor}
-            onUpdateChildren={onUpdateChildren}
           />
         ))}
       </div>

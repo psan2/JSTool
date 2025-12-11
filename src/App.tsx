@@ -39,17 +39,78 @@ function App() {
 
   const handleSaveAncestor = (ancestorData: Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
+      // Extract children IDs if they exist
+      const selectedChildrenIds = (ancestorData as any).selectedChildrenIds as string[] || [];
+
+      // Clean the ancestor data
+      const cleanAncestorData = { ...ancestorData };
+      delete (cleanAncestorData as any).selectedChildrenIds;
+
+      let savedAncestor: Ancestor;
+
       if (editingAncestor) {
-        const updated = storage.updateAncestor(editingAncestor.id, ancestorData);
+        const updated = storage.updateAncestor(editingAncestor.id, cleanAncestorData);
         if (updated) {
+          savedAncestor = updated;
           showNotification('Ancestor updated successfully!', 'success');
         } else {
           showNotification('Failed to update ancestor.', 'error');
+          return;
         }
       } else {
-        storage.addAncestor(ancestorData);
+        savedAncestor = storage.addAncestor(cleanAncestorData);
         showNotification('Ancestor added successfully!', 'success');
       }
+
+      // Handle children relationships
+      if (selectedChildrenIds.length > 0) {
+        selectedChildrenIds.forEach(childId => {
+          const child = storage.ancestors.find(a => a.id === childId);
+          if (child) {
+            // Determine if we should be parent1 or parent2
+            const updates: Partial<Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'>> = {};
+
+            if (!child.parent1Id) {
+              updates.parent1Id = savedAncestor.id;
+            } else if (!child.parent2Id) {
+              updates.parent2Id = savedAncestor.id;
+            } else if (child.parent1Id === savedAncestor.id || child.parent2Id === savedAncestor.id) {
+              // Already a parent, no change needed
+              return;
+            }
+
+            if (Object.keys(updates).length > 0) {
+              storage.updateAncestor(childId, updates);
+            }
+          }
+        });
+      }
+
+      // Handle removed children (if editing existing ancestor)
+      if (editingAncestor) {
+        const currentChildren = storage.ancestors.filter(a =>
+          a.parent1Id === editingAncestor.id || a.parent2Id === editingAncestor.id
+        );
+
+        currentChildren.forEach(child => {
+          if (!selectedChildrenIds.includes(child.id)) {
+            // This child was removed, update their parent relationships
+            const updates: Partial<Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'>> = {};
+
+            if (child.parent1Id === editingAncestor.id) {
+              updates.parent1Id = child.parent2Id;
+              updates.parent2Id = undefined;
+            } else if (child.parent2Id === editingAncestor.id) {
+              updates.parent2Id = undefined;
+            }
+
+            if (Object.keys(updates).length > 0) {
+              storage.updateAncestor(child.id, updates);
+            }
+          }
+        });
+      }
+
       setIsAncestorModalOpen(false);
       setEditingAncestor(null);
     } catch (error) {
@@ -104,19 +165,6 @@ function App() {
     }
   };
 
-  const handleUpdateChildren = (childId: string, parentIds: string[]) => {
-    const updates: Partial<Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'>> = {
-      parent1Id: parentIds[0] || undefined,
-      parent2Id: parentIds[1] || undefined,
-    };
-
-    const updated = storage.updateAncestor(childId, updates);
-    if (updated) {
-      showNotification('Parent relationships updated successfully!', 'success');
-    } else {
-      showNotification('Failed to update parent relationships.', 'error');
-    }
-  };
 
   return (
     <div className="container">
@@ -132,7 +180,6 @@ function App() {
         ancestors={storage.ancestors}
         onEditAncestor={handleEditAncestor}
         onDeleteAncestor={handleDeleteAncestor}
-        onUpdateChildren={handleUpdateChildren}
       />
 
       {isAncestorModalOpen && (

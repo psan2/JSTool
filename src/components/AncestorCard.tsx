@@ -6,10 +6,9 @@ interface AncestorCardProps {
   allAncestors: Ancestor[];
   onEdit: (ancestor: Ancestor) => void;
   onDelete: (id: string) => void;
-  onUpdateChildren: (ancestorId: string, childIds: string[]) => void;
 }
 
-const AncestorCard: React.FC<AncestorCardProps> = ({ ancestor, allAncestors, onEdit, onDelete, onUpdateChildren }) => {
+const AncestorCard: React.FC<AncestorCardProps> = ({ ancestor, allAncestors, onEdit, onDelete }) => {
   const getDisplayName = (ancestor: Ancestor): string => {
     if (ancestor.firstName || ancestor.lastName) {
       return `${ancestor.firstName || ''} ${ancestor.lastName || ''}`.trim();
@@ -60,12 +59,9 @@ const AncestorCard: React.FC<AncestorCardProps> = ({ ancestor, allAncestors, onE
       a.parent1Id === ancestor.id || a.parent2Id === ancestor.id
     );
 
-    // Find potential children (ancestors that don't have this person as parent yet)
-    const potentialChildren = allAncestors.filter(a =>
-      a.id !== ancestor.id &&
-      a.parent1Id !== ancestor.id &&
-      a.parent2Id !== ancestor.id
-    );
+    if (children.length === 0) {
+      return null;
+    }
 
     const getChildName = (child: Ancestor) => {
       return child.firstName || child.lastName
@@ -73,75 +69,14 @@ const AncestorCard: React.FC<AncestorCardProps> = ({ ancestor, allAncestors, onE
         : child.relationship.charAt(0).toUpperCase() + child.relationship.slice(1).replace('-', ' ');
     };
 
-    const handleChildToggle = (childId: string, isSelected: boolean) => {
-      if (isSelected) {
-        // Add this ancestor as a parent to the child
-        const child = allAncestors.find(a => a.id === childId);
-        if (child) {
-          // Determine if we should be parent1 or parent2
-          const newParent1Id = child.parent1Id || ancestor.id;
-          const newParent2Id = child.parent1Id ? ancestor.id : child.parent2Id;
-
-          // Update the child's parent relationships
-          onUpdateChildren(childId, [newParent1Id, newParent2Id].filter(Boolean) as string[]);
-        }
-      } else {
-        // Remove this ancestor as a parent from the child
-        const child = allAncestors.find(a => a.id === childId);
-        if (child) {
-          const newParent1Id = child.parent1Id === ancestor.id ? child.parent2Id : child.parent1Id;
-          const newParent2Id = child.parent2Id === ancestor.id ? undefined : child.parent2Id;
-
-          onUpdateChildren(childId, [newParent1Id, newParent2Id].filter(Boolean) as string[]);
-        }
-      }
-    };
-
     return (
       <div className="detail-group" key="children">
         <h4>Children</h4>
-        {children.length > 0 && (
-          <div>
-            {children.map(child => (
-              <div key={child.id} className="detail-item">
-                <label style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-                  <input
-                    type="checkbox"
-                    checked={true}
-                    onChange={(e) => handleChildToggle(child.id, e.target.checked)}
-                    style={{ marginRight: '8px' }}
-                  />
-                  {getChildName(child)}
-                </label>
-              </div>
-            ))}
+        {children.map(child => (
+          <div key={child.id} className="detail-item">
+            {getChildName(child)}
           </div>
-        )}
-        {potentialChildren.length > 0 && (
-          <div>
-            <div className="detail-item" style={{ fontStyle: 'italic', marginBottom: '8px' }}>
-              Add children:
-            </div>
-            {potentialChildren.map(child => (
-              <div key={child.id} className="detail-item">
-                <label style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-                  <input
-                    type="checkbox"
-                    checked={false}
-                    onChange={(e) => handleChildToggle(child.id, e.target.checked)}
-                    style={{ marginRight: '8px' }}
-                  />
-                  {getChildName(child)}
-                </label>
-              </div>
-            ))}
-          </div>
-        )}
-        {children.length === 0 && potentialChildren.length === 0 && (
-          <div className="detail-item" style={{ fontStyle: 'italic' }}>
-            No children or potential children available
-          </div>
-        )}
+        ))}
       </div>
     );
   };

@@ -1,93 +1,115 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Ancestor, LocationEvent, RelationshipLevel } from '../types';
-import Modal from './Modal';
-import EventEntry from './EventEntry';
+import React, { useCallback, useEffect, useState } from "react";
+import { Ancestor, LocationEvent, RelationshipLevel } from "../types";
+import EventEntry from "./EventEntry";
+import Modal from "./Modal";
 
 interface AncestorModalProps {
   ancestor: Ancestor | null;
   availablePartners: Ancestor[];
-  onSave: (ancestorData: Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  onSave: (
+    ancestorData: Omit<Ancestor, "id" | "createdAt" | "updatedAt">
+  ) => void;
   onClose: () => void;
 }
 
-const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartners, onSave, onClose }) => {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [relationship, setRelationship] = useState<RelationshipLevel | ''>('');
-  const [parent1Id, setParent1Id] = useState('');
-  const [parent2Id, setParent2Id] = useState('');
+const AncestorModal: React.FC<AncestorModalProps> = ({
+  ancestor,
+  availablePartners,
+  onSave,
+  onClose,
+}) => {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [relationship, setRelationship] = useState<RelationshipLevel | "">("");
+  const [parent1Id, setParent1Id] = useState("");
+  const [parent2Id, setParent2Id] = useState("");
 
   // Birth info
-  const [birthYear, setBirthYear] = useState('');
-  const [birthMonth, setBirthMonth] = useState('');
-  const [birthDay, setBirthDay] = useState('');
-  const [birthCountry, setBirthCountry] = useState('');
+  const [birthYear, setBirthYear] = useState("");
+  const [birthMonth, setBirthMonth] = useState("");
+  const [birthDay, setBirthDay] = useState("");
+  const [birthCountry, setBirthCountry] = useState("");
 
   // Death info
   const [isAlive, setIsAlive] = useState(true);
-  const [deathYear, setDeathYear] = useState('');
-  const [deathMonth, setDeathMonth] = useState('');
-  const [deathDay, setDeathDay] = useState('');
-  const [deathCountry, setDeathCountry] = useState('');
+  const [deathYear, setDeathYear] = useState("");
+  const [deathMonth, setDeathMonth] = useState("");
+  const [deathDay, setDeathDay] = useState("");
+  const [deathCountry, setDeathCountry] = useState("");
 
   // Multiple events
   const [marriages, setMarriages] = useState<LocationEvent[]>([]);
   const [divorces, setDivorces] = useState<LocationEvent[]>([]);
   const [naturalizations, setNaturalizations] = useState<LocationEvent[]>([]);
 
+  // Children management
+  const [selectedChildrenIds, setSelectedChildrenIds] = useState<string[]>([]);
+
   useEffect(() => {
     if (ancestor) {
-      setFirstName(ancestor.firstName || '');
-      setLastName(ancestor.lastName || '');
+      setFirstName(ancestor.firstName || "");
+      setLastName(ancestor.lastName || "");
       setRelationship(ancestor.relationship);
-      setParent1Id(ancestor.parent1Id || '');
-      setParent2Id(ancestor.parent2Id || '');
+      setParent1Id(ancestor.parent1Id || "");
+      setParent2Id(ancestor.parent2Id || "");
 
       // Birth info
-      setBirthYear(ancestor.birth?.date?.year?.toString() || '');
-      setBirthMonth(ancestor.birth?.date?.month?.toString() || '');
-      setBirthDay(ancestor.birth?.date?.day?.toString() || '');
-      setBirthCountry(ancestor.birth?.country || '');
+      setBirthYear(ancestor.birth?.date?.year?.toString() || "");
+      setBirthMonth(ancestor.birth?.date?.month?.toString() || "");
+      setBirthDay(ancestor.birth?.date?.day?.toString() || "");
+      setBirthCountry(ancestor.birth?.country || "");
 
       // Death info
-      const hasDeathInfo = ancestor.death && (ancestor.death.date || ancestor.death.country);
+      const hasDeathInfo =
+        ancestor.death && (ancestor.death.date || ancestor.death.country);
       setIsAlive(!hasDeathInfo);
-      setDeathYear(ancestor.death?.date?.year?.toString() || '');
-      setDeathMonth(ancestor.death?.date?.month?.toString() || '');
-      setDeathDay(ancestor.death?.date?.day?.toString() || '');
-      setDeathCountry(ancestor.death?.country || '');
+      setDeathYear(ancestor.death?.date?.year?.toString() || "");
+      setDeathMonth(ancestor.death?.date?.month?.toString() || "");
+      setDeathDay(ancestor.death?.date?.day?.toString() || "");
+      setDeathCountry(ancestor.death?.country || "");
 
       // Multiple events
       setMarriages(ancestor.marriages || []);
       setDivorces(ancestor.divorces || []);
       setNaturalizations(ancestor.naturalizations || []);
+
+      // Children - find all ancestors where this person is a parent
+      const currentChildren = availablePartners.filter(a =>
+        a.parent1Id === ancestor.id || a.parent2Id === ancestor.id
+      ).map(child => child.id);
+      setSelectedChildrenIds(currentChildren);
     } else {
       // Reset form for new ancestor
-      setFirstName('');
-      setLastName('');
-      setRelationship('');
-      setParent1Id('');
-      setParent2Id('');
-      setBirthYear('');
-      setBirthMonth('');
-      setBirthDay('');
-      setBirthCountry('');
+      setFirstName("");
+      setLastName("");
+      setRelationship("");
+      setParent1Id("");
+      setParent2Id("");
+      setBirthYear("");
+      setBirthMonth("");
+      setBirthDay("");
+      setBirthCountry("");
       setIsAlive(true);
-      setDeathYear('');
-      setDeathMonth('');
-      setDeathDay('');
-      setDeathCountry('');
+      setDeathYear("");
+      setDeathMonth("");
+      setDeathDay("");
+      setDeathCountry("");
       setMarriages([]);
       setDivorces([]);
       setNaturalizations([]);
+      setSelectedChildrenIds([]);
     }
   }, [ancestor]);
 
-  const validateDateField = (field: string, value: string, currentValue: string): string => {
-    if (!value) return '';
+  const validateDateField = (
+    field: string,
+    value: string,
+    currentValue: string
+  ): string => {
+    if (!value) return "";
 
     switch (field) {
-      case 'year':
+      case "year":
         const yearStr = value.toString();
         const yearNum = parseInt(yearStr);
 
@@ -103,11 +125,11 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
 
         // If it's invalid, keep the previous value
         return currentValue;
-      case 'month':
+      case "month":
         const monthNum = parseInt(value);
         if (monthNum < 1 || monthNum > 12) return currentValue;
         return monthNum.toString();
-      case 'day':
+      case "day":
         const dayNum = parseInt(value);
         if (dayNum < 1 || dayNum > 31) return currentValue;
         return dayNum.toString();
@@ -116,7 +138,12 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
     }
   };
 
-  const createLocationEvent = (year: string, month: string, day: string, country: string): LocationEvent | undefined => {
+  const createLocationEvent = (
+    year: string,
+    month: string,
+    day: string,
+    country: string
+  ): LocationEvent | undefined => {
     const hasDate = year || month || day;
     const hasCountry = country && country.trim();
 
@@ -145,11 +172,11 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
     e.preventDefault();
 
     if (!relationship) {
-      alert('Please select a relationship.');
+      alert("Please select a relationship.");
       return;
     }
 
-    const ancestorData: Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'> = {
+    const ancestorData: Omit<Ancestor, "id" | "createdAt" | "updatedAt"> = {
       firstName: firstName.trim() || undefined,
       lastName: lastName.trim() || undefined,
       relationship: relationship as RelationshipLevel,
@@ -159,18 +186,23 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
       marriages: marriages.filter(Boolean),
       divorces: divorces.filter(Boolean),
       naturalizations: naturalizations.filter(Boolean),
-      death: isAlive ? undefined : createLocationEvent(deathYear, deathMonth, deathDay, deathCountry),
+      death: isAlive
+        ? undefined
+        : createLocationEvent(deathYear, deathMonth, deathDay, deathCountry),
     };
+
+    // Store selected children IDs for processing after save
+    (ancestorData as any).selectedChildrenIds = selectedChildrenIds;
 
     onSave(ancestorData);
   };
 
   const addMarriage = useCallback(() => {
-    setMarriages(prev => [...prev, {}]);
+    setMarriages((prev) => [...prev, {}]);
   }, []);
 
   const updateMarriage = useCallback((index: number, event: LocationEvent) => {
-    setMarriages(prev => {
+    setMarriages((prev) => {
       const newMarriages = [...prev];
       newMarriages[index] = event;
       return newMarriages;
@@ -178,15 +210,15 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
   }, []);
 
   const removeMarriage = useCallback((index: number) => {
-    setMarriages(prev => prev.filter((_, i) => i !== index));
+    setMarriages((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
   const addDivorce = useCallback(() => {
-    setDivorces(prev => [...prev, {}]);
+    setDivorces((prev) => [...prev, {}]);
   }, []);
 
   const updateDivorce = useCallback((index: number, event: LocationEvent) => {
-    setDivorces(prev => {
+    setDivorces((prev) => {
       const newDivorces = [...prev];
       newDivorces[index] = event;
       return newDivorces;
@@ -194,28 +226,80 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
   }, []);
 
   const removeDivorce = useCallback((index: number) => {
-    setDivorces(prev => prev.filter((_, i) => i !== index));
+    setDivorces((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
   const addNaturalization = useCallback(() => {
-    setNaturalizations(prev => [...prev, {}]);
+    setNaturalizations((prev) => [...prev, {}]);
   }, []);
 
-  const updateNaturalization = useCallback((index: number, event: LocationEvent) => {
-    setNaturalizations(prev => {
-      const newNaturalizations = [...prev];
-      newNaturalizations[index] = event;
-      return newNaturalizations;
-    });
-  }, []);
+  const updateNaturalization = useCallback(
+    (index: number, event: LocationEvent) => {
+      setNaturalizations((prev) => {
+        const newNaturalizations = [...prev];
+        newNaturalizations[index] = event;
+        return newNaturalizations;
+      });
+    },
+    []
+  );
 
   const removeNaturalization = useCallback((index: number) => {
-    setNaturalizations(prev => prev.filter((_, i) => i !== index));
+    setNaturalizations((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const getEligibleChildren = useCallback(() => {
+    if (!availablePartners || availablePartners.length === 0) return [];
+
+    const currentAncestorBirthYear = ancestor?.birth?.date?.year || (birthYear ? parseInt(birthYear) : null);
+
+    return availablePartners.filter(potentialChild => {
+      // Can't be a child of themselves
+      if (potentialChild.id === ancestor?.id) return false;
+
+      // Can't have more than 2 parents already (unless we're already one of them)
+      const hasParent1 = !!potentialChild.parent1Id;
+      const hasParent2 = !!potentialChild.parent2Id;
+      const isCurrentlyParent = potentialChild.parent1Id === ancestor?.id || potentialChild.parent2Id === ancestor?.id;
+
+      if (hasParent1 && hasParent2 && !isCurrentlyParent) {
+        return false; // Already has 2 parents and we're not one of them
+      }
+
+      // Birth date validation - child should be born after parent
+      const childBirthYear = potentialChild.birth?.date?.year;
+      if (currentAncestorBirthYear && childBirthYear) {
+        if (childBirthYear <= currentAncestorBirthYear) {
+          return false; // Child was born before or same year as potential parent
+        }
+
+        // Minimum age gap of 15 years (reasonable minimum parenting age)
+        const ageGap = childBirthYear - currentAncestorBirthYear;
+        if (ageGap < 15) {
+          return false; // Too small age gap to be realistic parent-child
+        }
+
+        // Maximum age gap of 60 years (reasonable maximum parenting age)
+        if (ageGap > 60) {
+          return false; // Too large age gap to be realistic parent-child
+        }
+      }
+
+      return true;
+    });
+  }, [availablePartners, ancestor, birthYear]);
+
+  const handleChildToggle = useCallback((childId: string, isSelected: boolean) => {
+    if (isSelected) {
+      setSelectedChildrenIds(prev => [...prev, childId]);
+    } else {
+      setSelectedChildrenIds(prev => prev.filter(id => id !== childId));
+    }
   }, []);
 
   return (
     <Modal
-      title={ancestor ? 'Edit Ancestor' : 'Add Ancestor'}
+      title={ancestor ? "Edit Ancestor" : "Add Ancestor"}
       onClose={onClose}
     >
       <form className="form" onSubmit={handleSubmit}>
@@ -246,7 +330,9 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
           <select
             id="relationship"
             value={relationship}
-            onChange={(e) => setRelationship(e.target.value as RelationshipLevel)}
+            onChange={(e) =>
+              setRelationship(e.target.value as RelationshipLevel)
+            }
             required
           >
             <option value="">Select relationship</option>
@@ -254,7 +340,9 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
             <option value="parent">Parent</option>
             <option value="grandparent">Grandparent</option>
             <option value="great-grandparent">Great Grandparent</option>
-            <option value="great-great-grandparent">Great Great Grandparent</option>
+            <option value="great-great-grandparent">
+              Great Great Grandparent
+            </option>
           </select>
         </div>
 
@@ -267,11 +355,18 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
           >
             <option value="">Select parent 1 (optional)</option>
             {availablePartners
-              .filter(partner => partner.id !== ancestor?.id && partner.id !== parent2Id)
-              .map(partner => {
-                const displayName = partner.firstName || partner.lastName
-                  ? `${partner.firstName || ''} ${partner.lastName || ''}`.trim()
-                  : partner.relationship.charAt(0).toUpperCase() + partner.relationship.slice(1).replace('-', ' ');
+              .filter(
+                (partner) =>
+                  partner.id !== ancestor?.id && partner.id !== parent2Id
+              )
+              .map((partner) => {
+                const displayName =
+                  partner.firstName || partner.lastName
+                    ? `${partner.firstName || ""} ${
+                        partner.lastName || ""
+                      }`.trim()
+                    : partner.relationship.charAt(0).toUpperCase() +
+                      partner.relationship.slice(1).replace("-", " ");
                 return (
                   <option key={partner.id} value={partner.id}>
                     {displayName}
@@ -290,11 +385,18 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
           >
             <option value="">Select parent 2 (optional)</option>
             {availablePartners
-              .filter(partner => partner.id !== ancestor?.id && partner.id !== parent1Id)
-              .map(partner => {
-                const displayName = partner.firstName || partner.lastName
-                  ? `${partner.firstName || ''} ${partner.lastName || ''}`.trim()
-                  : partner.relationship.charAt(0).toUpperCase() + partner.relationship.slice(1).replace('-', ' ');
+              .filter(
+                (partner) =>
+                  partner.id !== ancestor?.id && partner.id !== parent1Id
+              )
+              .map((partner) => {
+                const displayName =
+                  partner.firstName || partner.lastName
+                    ? `${partner.firstName || ""} ${
+                        partner.lastName || ""
+                      }`.trim()
+                    : partner.relationship.charAt(0).toUpperCase() +
+                      partner.relationship.slice(1).replace("-", " ");
                 return (
                   <option key={partner.id} value={partner.id}>
                     {displayName}
@@ -311,7 +413,11 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
             <input
               type="number"
               value={birthYear}
-              onChange={(e) => setBirthYear(validateDateField('year', e.target.value, birthYear))}
+              onChange={(e) =>
+                setBirthYear(
+                  validateDateField("year", e.target.value, birthYear)
+                )
+              }
               min="1800"
               max="2024"
               placeholder="YYYY"
@@ -321,7 +427,11 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
             <input
               type="number"
               value={birthMonth}
-              onChange={(e) => setBirthMonth(validateDateField('month', e.target.value, birthMonth))}
+              onChange={(e) =>
+                setBirthMonth(
+                  validateDateField("month", e.target.value, birthMonth)
+                )
+              }
               min="1"
               max="12"
               placeholder="MM"
@@ -331,7 +441,9 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
             <input
               type="number"
               value={birthDay}
-              onChange={(e) => setBirthDay(validateDateField('day', e.target.value, birthDay))}
+              onChange={(e) =>
+                setBirthDay(validateDateField("day", e.target.value, birthDay))
+              }
               min="1"
               max="31"
               placeholder="DD"
@@ -362,7 +474,11 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
               currentAncestorId={ancestor?.id}
             />
           ))}
-          <button type="button" className="btn btn-secondary btn-small" onClick={addMarriage}>
+          <button
+            type="button"
+            className="btn btn-secondary btn-small"
+            onClick={addMarriage}
+          >
             Add Marriage
           </button>
         </fieldset>
@@ -381,7 +497,11 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
               currentAncestorId={ancestor?.id}
             />
           ))}
-          <button type="button" className="btn btn-secondary btn-small" onClick={addDivorce}>
+          <button
+            type="button"
+            className="btn btn-secondary btn-small"
+            onClick={addDivorce}
+          >
             Add Divorce
           </button>
         </fieldset>
@@ -397,7 +517,11 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
               onRemove={() => removeNaturalization(index)}
             />
           ))}
-          <button type="button" className="btn btn-secondary btn-small" onClick={addNaturalization}>
+          <button
+            type="button"
+            className="btn btn-secondary btn-small"
+            onClick={addNaturalization}
+          >
             Add Naturalization
           </button>
         </fieldset>
@@ -408,7 +532,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
               type="checkbox"
               checked={isAlive}
               onChange={(e) => setIsAlive(e.target.checked)}
-              style={{ marginRight: '8px' }}
+              style={{ marginRight: "8px" }}
             />
             Alive
           </label>
@@ -422,7 +546,11 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
               <input
                 type="number"
                 value={deathYear}
-                onChange={(e) => setDeathYear(validateDateField('year', e.target.value, deathYear))}
+                onChange={(e) =>
+                  setDeathYear(
+                    validateDateField("year", e.target.value, deathYear)
+                  )
+                }
                 min="1800"
                 max="2024"
                 placeholder="YYYY"
@@ -432,7 +560,11 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
               <input
                 type="number"
                 value={deathMonth}
-                onChange={(e) => setDeathMonth(validateDateField('month', e.target.value, deathMonth))}
+                onChange={(e) =>
+                  setDeathMonth(
+                    validateDateField("month", e.target.value, deathMonth)
+                  )
+                }
                 min="1"
                 max="12"
                 placeholder="MM"
@@ -442,7 +574,11 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
               <input
                 type="number"
                 value={deathDay}
-                onChange={(e) => setDeathDay(validateDateField('day', e.target.value, deathDay))}
+                onChange={(e) =>
+                  setDeathDay(
+                    validateDateField("day", e.target.value, deathDay)
+                  )
+                }
                 min="1"
                 max="31"
                 placeholder="DD"
@@ -459,6 +595,38 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
             </div>
           </fieldset>
         )}
+
+        <fieldset className="fieldset">
+          <legend>Children</legend>
+          {getEligibleChildren().map(child => {
+            const isSelected = selectedChildrenIds.includes(child.id);
+            const displayName = child.firstName || child.lastName
+              ? `${child.firstName || ""} ${child.lastName || ""}`.trim()
+              : child.relationship.charAt(0).toUpperCase() + child.relationship.slice(1).replace("-", " ");
+
+            return (
+              <div key={child.id} className="form-group">
+                <label style={{ display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={(e) => handleChildToggle(child.id, e.target.checked)}
+                    style={{ marginRight: "8px" }}
+                  />
+                  {displayName}
+                  {child.birth?.date?.year && ` (born ${child.birth.date.year})`}
+                </label>
+              </div>
+            );
+          })}
+          {getEligibleChildren().length === 0 && (
+            <div className="form-group">
+              <p style={{ fontStyle: 'italic', color: '#666' }}>
+                No eligible children available. Children must be born at least 15 years after this person and have fewer than 2 parents already assigned.
+              </p>
+            </div>
+          )}
+        </fieldset>
 
         <div className="form-actions">
           <button type="submit" className="btn btn-primary">
