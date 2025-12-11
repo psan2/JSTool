@@ -281,7 +281,7 @@ function buildTreeFromRoot(root: Ancestor, allAncestors: Ancestor[]) {
   // Constants for layout
   const NODE_WIDTH = 150;
   const NODE_HEIGHT = 80;
-  const GENERATION_HEIGHT = 120;
+  const GENERATION_HEIGHT = 180; // Increased spacing between generations
   const MIN_HORIZONTAL_SPACING = 200;
 
   // Build generation levels
