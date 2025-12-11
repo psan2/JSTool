@@ -46,7 +46,8 @@ const CountryAutocomplete: React.FC<CountryAutocompleteProps> = ({ value, onChan
   useEffect(() => {
     if (value) {
       const filtered = COUNTRIES.filter(country =>
-        country.toLowerCase().includes(value.toLowerCase())
+        country.toLowerCase().includes(value.toLowerCase()) &&
+        country.toLowerCase() !== value.toLowerCase() // Don't show exact matches
       ).slice(0, 10); // Limit to 10 suggestions
       setFilteredCountries(filtered);
       setIsOpen(filtered.length > 0 && value.length > 0);
