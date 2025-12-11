@@ -34,15 +34,10 @@ const EventEntry: React.FC<EventEntryProps> = ({
     setPartnerId(event.partnerId || '');
   }, [event]);
 
-  const updateEvent = () => {
+  useEffect(() => {
     const hasDate = year || month || day;
     const hasCountry = country && country.trim();
     const hasPartner = partnerId && partnerId.trim();
-
-    if (!hasDate && !hasCountry && !hasPartner) {
-      onChange({});
-      return;
-    }
 
     const newEvent: LocationEvent = {};
 
@@ -62,11 +57,13 @@ const EventEntry: React.FC<EventEntryProps> = ({
       newEvent.partnerId = partnerId.trim();
     }
 
-    onChange(newEvent);
-  };
+    // Only call onChange if there's actual data or if we need to clear it
+    const hasAnyData = hasDate || hasCountry || hasPartner;
+    const currentEventHasData = event.date || event.country || event.partnerId;
 
-  useEffect(() => {
-    updateEvent();
+    if (hasAnyData || currentEventHasData) {
+      onChange(newEvent);
+    }
   }, [year, month, day, country, partnerId]);
 
   return (

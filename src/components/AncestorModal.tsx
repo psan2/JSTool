@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Ancestor, LocationEvent, RelationshipLevel } from '../types';
 import Modal from './Modal';
 import EventEntry from './EventEntry';
@@ -124,47 +124,53 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
     onSave(ancestorData);
   };
 
-  const addMarriage = () => {
-    setMarriages([...marriages, {}]);
-  };
+  const addMarriage = useCallback(() => {
+    setMarriages(prev => [...prev, {}]);
+  }, []);
 
-  const updateMarriage = (index: number, event: LocationEvent) => {
-    const newMarriages = [...marriages];
-    newMarriages[index] = event;
-    setMarriages(newMarriages);
-  };
+  const updateMarriage = useCallback((index: number, event: LocationEvent) => {
+    setMarriages(prev => {
+      const newMarriages = [...prev];
+      newMarriages[index] = event;
+      return newMarriages;
+    });
+  }, []);
 
-  const removeMarriage = (index: number) => {
-    setMarriages(marriages.filter((_, i) => i !== index));
-  };
+  const removeMarriage = useCallback((index: number) => {
+    setMarriages(prev => prev.filter((_, i) => i !== index));
+  }, []);
 
-  const addDivorce = () => {
-    setDivorces([...divorces, {}]);
-  };
+  const addDivorce = useCallback(() => {
+    setDivorces(prev => [...prev, {}]);
+  }, []);
 
-  const updateDivorce = (index: number, event: LocationEvent) => {
-    const newDivorces = [...divorces];
-    newDivorces[index] = event;
-    setDivorces(newDivorces);
-  };
+  const updateDivorce = useCallback((index: number, event: LocationEvent) => {
+    setDivorces(prev => {
+      const newDivorces = [...prev];
+      newDivorces[index] = event;
+      return newDivorces;
+    });
+  }, []);
 
-  const removeDivorce = (index: number) => {
-    setDivorces(divorces.filter((_, i) => i !== index));
-  };
+  const removeDivorce = useCallback((index: number) => {
+    setDivorces(prev => prev.filter((_, i) => i !== index));
+  }, []);
 
-  const addNaturalization = () => {
-    setNaturalizations([...naturalizations, {}]);
-  };
+  const addNaturalization = useCallback(() => {
+    setNaturalizations(prev => [...prev, {}]);
+  }, []);
 
-  const updateNaturalization = (index: number, event: LocationEvent) => {
-    const newNaturalizations = [...naturalizations];
-    newNaturalizations[index] = event;
-    setNaturalizations(newNaturalizations);
-  };
+  const updateNaturalization = useCallback((index: number, event: LocationEvent) => {
+    setNaturalizations(prev => {
+      const newNaturalizations = [...prev];
+      newNaturalizations[index] = event;
+      return newNaturalizations;
+    });
+  }, []);
 
-  const removeNaturalization = (index: number) => {
-    setNaturalizations(naturalizations.filter((_, i) => i !== index));
-  };
+  const removeNaturalization = useCallback((index: number) => {
+    setNaturalizations(prev => prev.filter((_, i) => i !== index));
+  }, []);
 
   return (
     <Modal
