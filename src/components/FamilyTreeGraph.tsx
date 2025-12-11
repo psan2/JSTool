@@ -454,15 +454,41 @@ function buildTreeFromRoot(root: Ancestor, allAncestors: Ancestor[]) {
   maxWidth = Math.max(maxWidth, totalTreeWidth);
 
   sortedGenerations.forEach(([generation, ancestorsInGen]) => {
-    // Center nodes within the total tree width
-    const genWidth = ancestorsInGen.length * MIN_HORIZONTAL_SPACING;
-    const startX = (totalTreeWidth - genWidth) / 2;
-
     ancestorsInGen.forEach((ancestor, index) => {
-      const x =
-        startX + index * MIN_HORIZONTAL_SPACING + MIN_HORIZONTAL_SPACING / 2;
-      const y = currentY - generation * GENERATION_HEIGHT;
+      let x: number;
 
+      // For direct parent-child relationships, maintain vertical alignment
+      if (generation > 0) {
+        // Check if this ancestor is a parent of someone in the generation below
+        const childInBelowGeneration = allAncestors.find(child =>
+          child.parent1Id === ancestor.id || child.parent2Id === ancestor.id
+        );
+
+        if (childInBelowGeneration) {
+          // Find the child's position and align vertically
+          const childNode = nodes.find(node => node.ancestor.id === childInBelowGeneration.id);
+          if (childNode) {
+            x = childNode.x; // Use same x position as child
+          } else {
+            // Fallback to centered positioning
+            const genWidth = ancestorsInGen.length * MIN_HORIZONTAL_SPACING;
+            const startX = (totalTreeWidth - genWidth) / 2;
+            x = startX + index * MIN_HORIZONTAL_SPACING + MIN_HORIZONTAL_SPACING / 2;
+          }
+        } else {
+          // No direct child relationship, use centered positioning
+          const genWidth = ancestorsInGen.length * MIN_HORIZONTAL_SPACING;
+          const startX = (totalTreeWidth - genWidth) / 2;
+          x = startX + index * MIN_HORIZONTAL_SPACING + MIN_HORIZONTAL_SPACING / 2;
+        }
+      } else {
+        // Generation 0 (root level), use centered positioning
+        const genWidth = ancestorsInGen.length * MIN_HORIZONTAL_SPACING;
+        const startX = (totalTreeWidth - genWidth) / 2;
+        x = startX + index * MIN_HORIZONTAL_SPACING + MIN_HORIZONTAL_SPACING / 2;
+      }
+
+      const y = currentY - generation * GENERATION_HEIGHT;
       const relationship = inferRelationship(ancestor, allAncestors, root.id);
 
       const node: TreeNode = {
