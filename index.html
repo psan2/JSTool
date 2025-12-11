@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family History Citizenship Tool</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Family History Citizenship Tool</h1>
+            <p>Track your family history to determine citizenship eligibility</p>
+        </header>
+
+        <div class="controls">
+            <button id="add-ancestor-btn" class="btn btn-primary">Add Ancestor</button>
+            <button id="import-btn" class="btn btn-secondary">Import Data</button>
+            <button id="export-btn" class="btn btn-secondary">Export Data</button>
+            <button id="clear-btn" class="btn btn-danger">Clear All</button>
+        </div>
+
+        <div class="family-tree">
+            <div id="ancestors-list" class="ancestors-container">
+                <p class="empty-state">No ancestors added yet. Click "Add Ancestor" to get started.</p>
+            </div>
+        </div>
+
+        <!-- Modal for adding/editing ancestors -->
+        <div id="ancestor-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modal-title">Add Ancestor</h2>
+                    <span class="close">&times;</span>
+                </div>
+                <form id="ancestor-form">
+                    <div class="form-group">
+                        <label for="first-initial">First Initial:</label>
+                        <input type="text" id="first-initial" maxlength="1" pattern="[A-Za-z]" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="last-initial">Last Initial:</label>
+                        <input type="text" id="last-initial" maxlength="1" pattern="[A-Za-z]" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="relationship">Relationship:</label>
+                        <select id="relationship" required>
+                            <option value="">Select relationship</option>
+                            <option value="self">Self</option>
+                            <option value="parent">Parent</option>
+                            <option value="grandparent">Grandparent</option>
+                            <option value="great-grandparent">Great Grandparent</option>
+                            <option value="great-great-grandparent">Great Great Grandparent</option>
+                        </select>
+                    </div>
+
+                    <fieldset>
+                        <legend>Birth Information</legend>
+                        <div class="date-input-group">
+                            <label for="birth-year">Year:</label>
+                            <input type="number" id="birth-year" min="1800" max="2024">
+                            <label for="birth-month">Month:</label>
+                            <input type="number" id="birth-month" min="1" max="12">
+                            <label for="birth-day">Day:</label>
+                            <input type="number" id="birth-day" min="1" max="31">
+                        </div>
+                        <div class="form-group">
+                            <label for="birth-country">Country:</label>
+                            <input type="text" id="birth-country">
+                        </div>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Marriage Information</legend>
+                        <div class="date-input-group">
+                            <label for="marriage-year">Year:</label>
+                            <input type="number" id="marriage-year" min="1800" max="2024">
+                            <label for="marriage-month">Month:</label>
+                            <input type="number" id="marriage-month" min="1" max="12">
+                            <label for="marriage-day">Day:</label>
+                            <input type="number" id="marriage-day" min="1" max="31">
+                        </div>
+                        <div class="form-group">
+                            <label for="marriage-country">Country:</label>
+                            <input type="text" id="marriage-country">
+                        </div>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Naturalization Information</legend>
+                        <div class="date-input-group">
+                            <label for="naturalization-year">Year:</label>
+                            <input type="number" id="naturalization-year" min="1800" max="2024">
+                            <label for="naturalization-month">Month:</label>
+                            <input type="number" id="naturalization-month" min="1" max="12">
+                            <label for="naturalization-day">Day:</label>
+                            <input type="number" id="naturalization-day" min="1" max="31">
+                        </div>
+                        <div class="form-group">
+                            <label for="naturalization-country">Country:</label>
+                            <input type="text" id="naturalization-country">
+                        </div>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Death Information</legend>
+                        <div class="date-input-group">
+                            <label for="death-year">Year:</label>
+                            <input type="number" id="death-year" min="1800" max="2024">
+                            <label for="death-month">Month:</label>
+                            <input type="number" id="death-month" min="1" max="12">
+                            <label for="death-day">Day:</label>
+                            <input type="number" id="death-day" min="1" max="31">
+                        </div>
+                        <div class="form-group">
+                            <label for="death-country">Country:</label>
+                            <input type="text" id="death-country">
+                        </div>
+                    </fieldset>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save Ancestor</button>
+                        <button type="button" id="cancel-btn" class="btn btn-secondary">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Import/Export Modal -->
+        <div id="import-export-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="import-export-title">Import/Export Data</h2>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div id="export-section">
+                        <h3>Export Options</h3>
+                        <button id="copy-url-btn" class="btn btn-secondary">Copy Shareable URL</button>
+                        <button id="copy-data-btn" class="btn btn-secondary">Copy Data String</button>
+                        <textarea id="export-data" readonly placeholder="Your encoded data will appear here..."></textarea>
+                    </div>
+                    <div id="import-section">
+                        <h3>Import Data</h3>
+                        <textarea id="import-data" placeholder="Paste your encoded data or URL here..."></textarea>
+                        <button id="import-data-btn" class="btn btn-primary">Import</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="dist/main.js"></script>
+</body>
+</html>
