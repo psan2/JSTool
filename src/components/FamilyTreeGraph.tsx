@@ -102,8 +102,29 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
     );
   }
 
+  // Check if we only have a blank Self ancestor (new user experience)
+  const selfPerson = ancestors.find(a => !a.parent1Id && !a.parent2Id) || ancestors[0];
+  const isNewUser = ancestors.length === 1 && !selfPerson.firstName && !selfPerson.lastName &&
+                   !selfPerson.birth && !selfPerson.marriages?.length && !selfPerson.divorces?.length &&
+                   !selfPerson.naturalizations?.length && !selfPerson.death;
+
   return (
     <div className="family-tree">
+      {isNewUser && (
+        <div style={{
+          textAlign: 'center',
+          marginBottom: '20px',
+          padding: '15px',
+          backgroundColor: '#e8f4fd',
+          borderRadius: '8px',
+          border: '1px solid #3498db'
+        }}>
+          <p style={{ margin: '0', color: '#2c3e50', fontSize: '14px' }}>
+            <strong>Welcome!</strong> Start by clicking the edit button (✎) on the "Self" card to add your information,
+            or use the + buttons to add parents above or children below.
+          </p>
+        </div>
+      )}
       <div className="family-tree-graph">
         <svg width={dimensions.width} height={dimensions.height} style={{ border: '1px solid #ddd', borderRadius: '8px' }}>
           {/* Render connections first (behind nodes) */}

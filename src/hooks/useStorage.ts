@@ -195,9 +195,22 @@ export const useStorage = () => {
   }, [data, saveToStorage]);
 
   const clearAllData = useCallback(() => {
-    const emptyData = createEmptyData();
-    saveToStorage(emptyData);
-  }, [createEmptyData, saveToStorage]);
+    const now = Date.now();
+    const selfAncestor: Ancestor = {
+      id: generateId(),
+      createdAt: now,
+      updatedAt: now
+    };
+
+    const dataWithSelf = {
+      ancestors: [selfAncestor],
+      version: CURRENT_VERSION,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    saveToStorage(dataWithSelf);
+  }, [saveToStorage]);
 
   const exportData = useCallback((): string => {
     return JSON.stringify(data);
