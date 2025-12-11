@@ -67,20 +67,24 @@ function App() {
         selectedChildrenIds.forEach(childId => {
           const child = storage.ancestors.find(a => a.id === childId);
           if (child) {
-            // Determine if we should be parent1 or parent2
-            const updates: Partial<Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'>> = {};
+            // Check if we're already a parent
+            const isCurrentlyParent = child.parent1Id === savedAncestor.id || child.parent2Id === savedAncestor.id;
 
-            if (!child.parent1Id) {
-              updates.parent1Id = savedAncestor.id;
-            } else if (!child.parent2Id) {
-              updates.parent2Id = savedAncestor.id;
-            } else if (child.parent1Id === savedAncestor.id || child.parent2Id === savedAncestor.id) {
-              // Already a parent, no change needed
-              return;
-            }
+            if (!isCurrentlyParent) {
+              // Determine if we should be parent1 or parent2
+              const updates: Partial<Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'>> = {};
 
-            if (Object.keys(updates).length > 0) {
-              storage.updateAncestor(childId, updates);
+              if (!child.parent1Id) {
+                updates.parent1Id = savedAncestor.id;
+              } else if (!child.parent2Id) {
+                updates.parent2Id = savedAncestor.id;
+              }
+              // Note: With unlimited parents, we could extend this to parent3Id, parent4Id, etc.
+              // For now, we'll stick with parent1Id and parent2Id but allow multiple people to be children
+
+              if (Object.keys(updates).length > 0) {
+                storage.updateAncestor(childId, updates);
+              }
             }
           }
         });

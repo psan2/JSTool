@@ -257,14 +257,6 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
       // Can't be a child of themselves
       if (potentialChild.id === ancestor?.id) return false;
 
-      // Can't have more than 2 parents already (unless we're already one of them)
-      const hasParent1 = !!potentialChild.parent1Id;
-      const hasParent2 = !!potentialChild.parent2Id;
-      const isCurrentlyParent = potentialChild.parent1Id === ancestor?.id || potentialChild.parent2Id === ancestor?.id;
-
-      if (hasParent1 && hasParent2 && !isCurrentlyParent) {
-        return false; // Already has 2 parents and we're not one of them
-      }
 
       // Birth date validation - parents must be older than children
       const childBirthYear = potentialChild.birth?.date?.year;
@@ -611,7 +603,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
           {getEligibleChildren().length === 0 && (
             <div className="form-group">
               <p style={{ fontStyle: 'italic', color: '#666' }}>
-                No eligible children available. Parents must be older than their children and children can have at most 2 parents.
+                No eligible children available. Parents must be older than their children.
               </p>
             </div>
           )}
