@@ -200,15 +200,13 @@ function buildTreeFromRoot(root: Ancestor, allAncestors: Ancestor[]) {
     const genWidth = ancestorsInGen.length * MIN_HORIZONTAL_SPACING;
     maxWidth = Math.max(maxWidth, genWidth);
 
-    const startX = (genWidth - MIN_HORIZONTAL_SPACING) / 2;
-
     ancestorsInGen.forEach((ancestor, index) => {
-      const x = startX + (index * MIN_HORIZONTAL_SPACING) + MIN_HORIZONTAL_SPACING / 2;
+      const x = (index * MIN_HORIZONTAL_SPACING) + MIN_HORIZONTAL_SPACING / 2;
       const y = currentY - (generation * GENERATION_HEIGHT);
 
       const node: TreeNode = {
         ancestor,
-        x: x + 100, // Offset for padding
+        x,
         y,
         generation
       };
@@ -216,6 +214,14 @@ function buildTreeFromRoot(root: Ancestor, allAncestors: Ancestor[]) {
       nodes.push(node);
       nodeMap.set(ancestor.id, node);
     });
+  });
+
+  // Center all nodes horizontally
+  const totalWidth = maxWidth + 200; // Add padding
+  const offsetX = totalWidth / 2 - maxWidth / 2;
+
+  nodes.forEach(node => {
+    node.x += offsetX;
   });
 
   // Create connections
