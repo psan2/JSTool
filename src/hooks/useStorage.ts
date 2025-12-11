@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Ancestor, FamilyHistoryData } from '../types';
+import { Ancestor, FamilyHistoryData, LocationEvent } from '../types';
 
 const STORAGE_KEY = 'family-history-data';
 const CURRENT_VERSION = '2.0.0';
@@ -77,9 +77,14 @@ export const useStorage = () => {
       updatedAt: now
     };
 
+    let updatedAncestors = [...data.ancestors, newAncestor];
+
+    // Handle bidirectional relationships for marriages and divorces
+    updatedAncestors = updateBidirectionalRelationships(updatedAncestors, newAncestor);
+
     const newData = {
       ...data,
-      ancestors: [...data.ancestors, newAncestor]
+      ancestors: updatedAncestors
     };
 
     saveToStorage(newData);
@@ -98,8 +103,11 @@ export const useStorage = () => {
       updatedAt: Date.now()
     };
 
-    const newAncestors = [...data.ancestors];
+    let newAncestors = [...data.ancestors];
     newAncestors[index] = updatedAncestor;
+
+    // Handle bidirectional relationships for marriages and divorces
+    newAncestors = updateBidirectionalRelationships(newAncestors, updatedAncestor);
 
     const newData = {
       ...data,
@@ -255,4 +263,70 @@ export const useStorage = () => {
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+function updateBidirectionalRelationships(ancestors: Ancestor[], changedAncestor: Ancestor): Ancestor[] {
+  const updatedAncestors = [...ancestors];
+
+  // Handle marriages
+  if (changedAncestor.marriages) {
+    changedAncestor.marriages.forEach(marriage => {
+      if (marriage.partnerId) {
+        const partnerIndex = updatedAncestors.findIndex(a => a.id === marriage.partnerId);
+        if (partnerIndex !== -1) {
+          const partner = updatedAncestors[partnerIndex];
+
+          // Check if partner already has this marriage
+          const partnerMarriages = partner.marriages || [];
+          const hasExistingMarriage = partnerMarriages.some(m => m.partnerId === changedAncestor.id);
+
+          if (!hasExistingMarriage) {
+            // Add the reciprocal marriage to the partner
+            const reciprocalMarriage: LocationEvent = {
+              ...marriage,
+              partnerId: changedAncestor.id
+            };
+
+            updatedAncestors[partnerIndex] = {
+              ...partner,
+              marriages: [...partnerMarriages, reciprocalMarriage],
+              updatedAt: Date.now()
+            };
+          }
+        }
+      }
+    });
+  }
+
+  // Handle divorces
+  if (changedAncestor.divorces) {
+    changedAncestor.divorces.forEach(divorce => {
+      if (divorce.partnerId) {
+        const partnerIndex = updatedAncestors.findIndex(a => a.id === divorce.partnerId);
+        if (partnerIndex !== -1) {
+          const partner = updatedAncestors[partnerIndex];
+
+          // Check if partner already has this divorce
+          const partnerDivorces = partner.divorces || [];
+          const hasExistingDivorce = partnerDivorces.some(d => d.partnerId === changedAncestor.id);
+
+          if (!hasExistingDivorce) {
+            // Add the reciprocal divorce to the partner
+            const reciprocalDivorce: LocationEvent = {
+              ...divorce,
+              partnerId: changedAncestor.id
+            };
+
+            updatedAncestors[partnerIndex] = {
+              ...partner,
+              divorces: [...partnerDivorces, reciprocalDivorce],
+              updatedAt: Date.now()
+            };
+          }
+        }
+      }
+    });
+  }
+
+  return updatedAncestors;
 }
