@@ -100,6 +100,19 @@ body {
     min-height: 400px;
 }
 
+/* Family tree graph */
+.family-tree-graph {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: auto;
+    max-height: 80vh;
+}
+
+.family-tree-graph svg {
+    background: #fafafa;
+}
+
 .ancestors-container {
     display: grid;
     gap: 15px;

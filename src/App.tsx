@@ -4,7 +4,7 @@ import { useNotification } from './hooks/useNotification';
 import { Ancestor } from './types';
 import Header from './components/Header';
 import Controls from './components/Controls';
-import FamilyTree from './components/FamilyTree';
+import FamilyTreeGraph from './components/FamilyTreeGraph';
 import AncestorModal from './components/AncestorModal';
 import ImportExportModal from './components/ImportExportModal';
 import NotificationContainer from './components/NotificationContainer';
@@ -180,7 +180,7 @@ function App() {
         onClearAll={handleClearAll}
       />
 
-      <FamilyTree
+      <FamilyTreeGraph
         ancestors={storage.ancestors}
         onEditAncestor={handleEditAncestor}
         onDeleteAncestor={handleDeleteAncestor}
