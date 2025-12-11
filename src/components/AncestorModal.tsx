@@ -227,6 +227,8 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
               onChange={(e) => setBirthYear(e.target.value)}
               min="1800"
               max="2024"
+              placeholder="YYYY"
+              maxLength={4}
             />
             <label>Month:</label>
             <input
@@ -235,6 +237,8 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
               onChange={(e) => setBirthMonth(e.target.value)}
               min="1"
               max="12"
+              placeholder="MM"
+              maxLength={2}
             />
             <label>Day:</label>
             <input
@@ -243,6 +247,8 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
               onChange={(e) => setBirthDay(e.target.value)}
               min="1"
               max="31"
+              placeholder="DD"
+              maxLength={2}
             />
           </div>
           <div className="form-group">
@@ -332,6 +338,8 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
                 onChange={(e) => setDeathYear(e.target.value)}
                 min="1800"
                 max="2024"
+                placeholder="YYYY"
+                maxLength={4}
               />
               <label>Month:</label>
               <input
@@ -340,6 +348,8 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
                 onChange={(e) => setDeathMonth(e.target.value)}
                 min="1"
                 max="12"
+                placeholder="MM"
+                maxLength={2}
               />
               <label>Day:</label>
               <input
@@ -348,6 +358,8 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
                 onChange={(e) => setDeathDay(e.target.value)}
                 min="1"
                 max="31"
+                placeholder="DD"
+                maxLength={2}
               />
             </div>
             <div className="form-group">

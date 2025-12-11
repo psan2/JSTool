@@ -36,17 +36,44 @@ const EventEntry: React.FC<EventEntryProps> = ({
     isInitialLoad.current = true;
   }, [event]);
 
+  const validateAndFormatValue = (field: string, value: string): string => {
+    if (!value) return '';
+
+    switch (field) {
+      case 'year':
+        // Ensure 4 digits for year
+        const yearNum = parseInt(value);
+        if (yearNum < 1800 || yearNum > 2024) return year; // Keep previous value if invalid
+        return yearNum.toString();
+      case 'month':
+        // Ensure 1-2 digits for month
+        const monthNum = parseInt(value);
+        if (monthNum < 1 || monthNum > 12) return month; // Keep previous value if invalid
+        return monthNum.toString();
+      case 'day':
+        // Ensure 1-2 digits for day
+        const dayNum = parseInt(value);
+        if (dayNum < 1 || dayNum > 31) return day; // Keep previous value if invalid
+        return dayNum.toString();
+      default:
+        return value;
+    }
+  };
+
   const handleFieldChange = (field: string, value: string) => {
+    // Validate and format the value
+    const validatedValue = validateAndFormatValue(field, value);
+
     // Update the appropriate state
     switch (field) {
       case 'year':
-        setYear(value);
+        setYear(validatedValue);
         break;
       case 'month':
-        setMonth(value);
+        setMonth(validatedValue);
         break;
       case 'day':
-        setDay(value);
+        setDay(validatedValue);
         break;
       case 'country':
         setCountry(value);
@@ -63,9 +90,9 @@ const EventEntry: React.FC<EventEntryProps> = ({
     }
 
     // Build the new event with the updated value
-    const newYear = field === 'year' ? value : year;
-    const newMonth = field === 'month' ? value : month;
-    const newDay = field === 'day' ? value : day;
+    const newYear = field === 'year' ? validatedValue : year;
+    const newMonth = field === 'month' ? validatedValue : month;
+    const newDay = field === 'day' ? validatedValue : day;
     const newCountry = field === 'country' ? value : country;
     const newPartnerId = field === 'partnerId' ? value : partnerId;
 
@@ -110,6 +137,8 @@ const EventEntry: React.FC<EventEntryProps> = ({
           onChange={(e) => handleFieldChange('year', e.target.value)}
           min="1800"
           max="2024"
+          placeholder="YYYY"
+          maxLength={4}
         />
         <label>Month:</label>
         <input
@@ -118,6 +147,8 @@ const EventEntry: React.FC<EventEntryProps> = ({
           onChange={(e) => handleFieldChange('month', e.target.value)}
           min="1"
           max="12"
+          placeholder="MM"
+          maxLength={2}
         />
         <label>Day:</label>
         <input
@@ -126,6 +157,8 @@ const EventEntry: React.FC<EventEntryProps> = ({
           onChange={(e) => handleFieldChange('day', e.target.value)}
           min="1"
           max="31"
+          placeholder="DD"
+          maxLength={2}
         />
       </div>
       <div className="form-group">
