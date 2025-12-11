@@ -125,24 +125,55 @@ function App() {
   };
 
   const handleAddParent = (childId: string) => {
+    console.log('handleAddParent called for childId:', childId); // Debug log
+
     const child = storage.ancestors.find(a => a.id === childId);
-    if (!child) return;
+    if (!child) {
+      console.error('Child not found:', childId);
+      showNotification('Error: Child not found.', 'error');
+      return;
+    }
+
+    console.log('Found child:', child); // Debug log
 
     // Create a new parent ancestor
     const parentData: Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'> = {};
     const newParent = storage.addAncestor(parentData);
 
-    // Link the parent to the child
-    const updates: Partial<Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'>> = {};
-    if (!child.parent1Id) {
-      updates.parent1Id = newParent.id;
-    } else if (!child.parent2Id) {
-      updates.parent2Id = newParent.id;
+    console.log('Created new parent:', newParent); // Debug log
+
+    // Get the updated child data after the parent was added (storage might have changed)
+    const updatedChild = storage.ancestors.find(a => a.id === childId);
+    if (!updatedChild) {
+      console.error('Updated child not found:', childId);
+      showNotification('Error: Updated child not found.', 'error');
+      return;
     }
 
-    if (Object.keys(updates).length > 0) {
-      storage.updateAncestor(childId, updates);
+    // Link the parent to the child
+    const updates: Partial<Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'>> = {};
+    if (!updatedChild.parent1Id) {
+      updates.parent1Id = newParent.id;
+      console.log('Setting as parent1Id:', newParent.id); // Debug log
+    } else if (!updatedChild.parent2Id) {
+      updates.parent2Id = newParent.id;
+      console.log('Setting as parent2Id:', newParent.id); // Debug log
+    } else {
+      console.log('Child already has both parents'); // Debug log
+      showNotification('This person already has two parents assigned.', 'error');
+      return;
     }
+
+    console.log('Updating child with:', updates); // Debug log
+    const updateResult = storage.updateAncestor(childId, updates);
+
+    if (!updateResult) {
+      console.error('Failed to update child ancestor'); // Debug log
+      showNotification('Failed to update person.', 'error');
+      return;
+    }
+
+    console.log('Successfully updated child'); // Debug log
 
     // Open the edit modal for the new parent
     setEditingAncestor(newParent);
