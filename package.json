@@ -1,18 +1,31 @@
 {
   "name": "family-history-citizenship-tool",
-  "version": "1.0.0",
-  "description": "A tool to help users input family history to determine citizenship eligibility",
-  "main": "index.html",
+  "version": "2.0.0",
+  "description": "A React-based tool to help users input family history to determine citizenship eligibility",
+  "main": "src/index.tsx",
   "scripts": {
-    "dev": "npx http-server . -p 3000 -o",
-    "build": "tsc",
-    "watch": "tsc --watch"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
-    "http-server": "^14.1.1"
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@typescript-eslint/eslint-plugin": "^6.14.0",
+    "@typescript-eslint/parser": "^6.14.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "eslint": "^8.55.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.8"
   },
-  "keywords": ["family-history", "citizenship", "genealogy"],
+  "keywords": ["family-history", "citizenship", "genealogy", "react"],
   "author": "",
   "license": "MIT"
 }

@@ -1,0 +1,100 @@
+import React, { useState, useEffect } from 'react';
+import { LocationEvent } from '../types';
+
+interface EventEntryProps {
+  title: string;
+  event: LocationEvent;
+  onChange: (event: LocationEvent) => void;
+  onRemove: () => void;
+}
+
+const EventEntry: React.FC<EventEntryProps> = ({ title, event, onChange, onRemove }) => {
+  const [year, setYear] = useState('');
+  const [month, setMonth] = useState('');
+  const [day, setDay] = useState('');
+  const [country, setCountry] = useState('');
+
+  useEffect(() => {
+    setYear(event.date?.year?.toString() || '');
+    setMonth(event.date?.month?.toString() || '');
+    setDay(event.date?.day?.toString() || '');
+    setCountry(event.country || '');
+  }, [event]);
+
+  const updateEvent = () => {
+    const hasDate = year || month || day;
+    const hasCountry = country && country.trim();
+
+    if (!hasDate && !hasCountry) {
+      onChange({});
+      return;
+    }
+
+    const newEvent: LocationEvent = {};
+
+    if (hasDate) {
+      const date: any = {};
+      if (year) date.year = parseInt(year);
+      if (month) date.month = parseInt(month);
+      if (day) date.day = parseInt(day);
+      newEvent.date = date;
+    }
+
+    if (hasCountry) {
+      newEvent.country = country.trim();
+    }
+
+    onChange(newEvent);
+  };
+
+  useEffect(() => {
+    updateEvent();
+  }, [year, month, day, country]);
+
+  return (
+    <div className="event-entry">
+      <div className="event-entry-header">
+        <span className="event-entry-title">{title}</span>
+        <button type="button" className="remove-event-btn" onClick={onRemove}>
+          Remove
+        </button>
+      </div>
+      <div className="date-input-group">
+        <label>Year:</label>
+        <input
+          type="number"
+          value={year}
+          onChange={(e) => setYear(e.target.value)}
+          min="1800"
+          max="2024"
+        />
+        <label>Month:</label>
+        <input
+          type="number"
+          value={month}
+          onChange={(e) => setMonth(e.target.value)}
+          min="1"
+          max="12"
+        />
+        <label>Day:</label>
+        <input
+          type="number"
+          value={day}
+          onChange={(e) => setDay(e.target.value)}
+          min="1"
+          max="31"
+        />
+      </div>
+      <div className="form-group">
+        <label>Country:</label>
+        <input
+          type="text"
+          value={country}
+          onChange={(e) => setCountry(e.target.value)}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default EventEntry;
