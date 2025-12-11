@@ -77,6 +77,39 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
     }
   }, [ancestor]);
 
+  const validateDateField = (field: string, value: string, currentValue: string): string => {
+    if (!value) return '';
+
+    switch (field) {
+      case 'year':
+        const yearStr = value.toString();
+        const yearNum = parseInt(yearStr);
+
+        // If it's a valid 4-digit year, return it as-is
+        if (yearStr.length === 4 && yearNum >= 1800 && yearNum <= 2024) {
+          return yearStr;
+        }
+
+        // If it's a partial year being typed, allow it
+        if (yearStr.length < 4 && yearNum > 0) {
+          return yearStr;
+        }
+
+        // If it's invalid, keep the previous value
+        return currentValue;
+      case 'month':
+        const monthNum = parseInt(value);
+        if (monthNum < 1 || monthNum > 12) return currentValue;
+        return monthNum.toString();
+      case 'day':
+        const dayNum = parseInt(value);
+        if (dayNum < 1 || dayNum > 31) return currentValue;
+        return dayNum.toString();
+      default:
+        return value;
+    }
+  };
+
   const createLocationEvent = (year: string, month: string, day: string, country: string): LocationEvent | undefined => {
     const hasDate = year || month || day;
     const hasCountry = country && country.trim();
@@ -224,7 +257,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
             <input
               type="number"
               value={birthYear}
-              onChange={(e) => setBirthYear(e.target.value)}
+              onChange={(e) => setBirthYear(validateDateField('year', e.target.value, birthYear))}
               min="1800"
               max="2024"
               placeholder="YYYY"
@@ -234,7 +267,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
             <input
               type="number"
               value={birthMonth}
-              onChange={(e) => setBirthMonth(e.target.value)}
+              onChange={(e) => setBirthMonth(validateDateField('month', e.target.value, birthMonth))}
               min="1"
               max="12"
               placeholder="MM"
@@ -244,7 +277,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
             <input
               type="number"
               value={birthDay}
-              onChange={(e) => setBirthDay(e.target.value)}
+              onChange={(e) => setBirthDay(validateDateField('day', e.target.value, birthDay))}
               min="1"
               max="31"
               placeholder="DD"
@@ -335,7 +368,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
               <input
                 type="number"
                 value={deathYear}
-                onChange={(e) => setDeathYear(e.target.value)}
+                onChange={(e) => setDeathYear(validateDateField('year', e.target.value, deathYear))}
                 min="1800"
                 max="2024"
                 placeholder="YYYY"
@@ -345,7 +378,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
               <input
                 type="number"
                 value={deathMonth}
-                onChange={(e) => setDeathMonth(e.target.value)}
+                onChange={(e) => setDeathMonth(validateDateField('month', e.target.value, deathMonth))}
                 min="1"
                 max="12"
                 placeholder="MM"
@@ -355,7 +388,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
               <input
                 type="number"
                 value={deathDay}
-                onChange={(e) => setDeathDay(e.target.value)}
+                onChange={(e) => setDeathDay(validateDateField('day', e.target.value, deathDay))}
                 min="1"
                 max="31"
                 placeholder="DD"

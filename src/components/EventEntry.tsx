@@ -41,10 +41,22 @@ const EventEntry: React.FC<EventEntryProps> = ({
 
     switch (field) {
       case 'year':
-        // Ensure 4 digits for year
-        const yearNum = parseInt(value);
-        if (yearNum < 1800 || yearNum > 2024) return year; // Keep previous value if invalid
-        return yearNum.toString();
+        // Handle year validation more carefully
+        const yearStr = value.toString();
+        const yearNum = parseInt(yearStr);
+
+        // If it's a valid 4-digit year, return it as-is
+        if (yearStr.length === 4 && yearNum >= 1800 && yearNum <= 2024) {
+          return yearStr;
+        }
+
+        // If it's a partial year being typed, allow it
+        if (yearStr.length < 4 && yearNum > 0) {
+          return yearStr;
+        }
+
+        // If it's invalid, keep the previous value
+        return year;
       case 'month':
         // Ensure 1-2 digits for month
         const monthNum = parseInt(value);
