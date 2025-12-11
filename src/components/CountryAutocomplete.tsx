@@ -89,6 +89,7 @@ const CountryAutocomplete: React.FC<CountryAutocompleteProps> = ({ value, onChan
     if (e.key === 'Escape') {
       setIsOpen(false);
     }
+    // Allow all other keys to pass through normally (including space)
   };
 
   return (
