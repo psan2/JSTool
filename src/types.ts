@@ -17,6 +17,8 @@ export interface Ancestor {
     firstName?: string;
     lastName?: string;
     relationship: 'self' | 'parent' | 'grandparent' | 'great-grandparent' | 'great-great-grandparent';
+    parent1Id?: string; // ID of first parent
+    parent2Id?: string; // ID of second parent
     birth?: LocationEvent;
     marriages?: LocationEvent[];
     divorces?: LocationEvent[];
@@ -40,6 +42,8 @@ export interface AncestorFormData {
     firstName?: string;
     lastName?: string;
     relationship: RelationshipLevel;
+    parent1Id?: string;
+    parent2Id?: string;
     birthYear?: string;
     birthMonth?: string;
     birthDay?: string;

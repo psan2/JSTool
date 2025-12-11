@@ -14,6 +14,8 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [relationship, setRelationship] = useState<RelationshipLevel | ''>('');
+  const [parent1Id, setParent1Id] = useState('');
+  const [parent2Id, setParent2Id] = useState('');
 
   // Birth info
   const [birthYear, setBirthYear] = useState('');
@@ -38,6 +40,8 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
       setFirstName(ancestor.firstName || '');
       setLastName(ancestor.lastName || '');
       setRelationship(ancestor.relationship);
+      setParent1Id(ancestor.parent1Id || '');
+      setParent2Id(ancestor.parent2Id || '');
 
       // Birth info
       setBirthYear(ancestor.birth?.date?.year?.toString() || '');
@@ -62,6 +66,8 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
       setFirstName('');
       setLastName('');
       setRelationship('');
+      setParent1Id('');
+      setParent2Id('');
       setBirthYear('');
       setBirthMonth('');
       setBirthDay('');
@@ -147,6 +153,8 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
       firstName: firstName.trim() || undefined,
       lastName: lastName.trim() || undefined,
       relationship: relationship as RelationshipLevel,
+      parent1Id: parent1Id || undefined,
+      parent2Id: parent2Id || undefined,
       birth: createLocationEvent(birthYear, birthMonth, birthDay, birthCountry),
       marriages: marriages.filter(Boolean),
       divorces: divorces.filter(Boolean),
@@ -247,6 +255,52 @@ const AncestorModal: React.FC<AncestorModalProps> = ({ ancestor, availablePartne
             <option value="grandparent">Grandparent</option>
             <option value="great-grandparent">Great Grandparent</option>
             <option value="great-great-grandparent">Great Great Grandparent</option>
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="parent1">Parent 1 (optional):</label>
+          <select
+            id="parent1"
+            value={parent1Id}
+            onChange={(e) => setParent1Id(e.target.value)}
+          >
+            <option value="">Select parent 1 (optional)</option>
+            {availablePartners
+              .filter(partner => partner.id !== ancestor?.id && partner.id !== parent2Id)
+              .map(partner => {
+                const displayName = partner.firstName || partner.lastName
+                  ? `${partner.firstName || ''} ${partner.lastName || ''}`.trim()
+                  : partner.relationship.charAt(0).toUpperCase() + partner.relationship.slice(1).replace('-', ' ');
+                return (
+                  <option key={partner.id} value={partner.id}>
+                    {displayName}
+                  </option>
+                );
+              })}
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="parent2">Parent 2 (optional):</label>
+          <select
+            id="parent2"
+            value={parent2Id}
+            onChange={(e) => setParent2Id(e.target.value)}
+          >
+            <option value="">Select parent 2 (optional)</option>
+            {availablePartners
+              .filter(partner => partner.id !== ancestor?.id && partner.id !== parent1Id)
+              .map(partner => {
+                const displayName = partner.firstName || partner.lastName
+                  ? `${partner.firstName || ''} ${partner.lastName || ''}`.trim()
+                  : partner.relationship.charAt(0).toUpperCase() + partner.relationship.slice(1).replace('-', ' ');
+                return (
+                  <option key={partner.id} value={partner.id}>
+                    {displayName}
+                  </option>
+                );
+              })}
           </select>
         </div>
 

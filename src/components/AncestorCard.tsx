@@ -30,6 +30,29 @@ const AncestorCard: React.FC<AncestorCardProps> = ({ ancestor, allAncestors, onE
     return parts.join('-');
   };
 
+  const createParentDetails = (ancestor: Ancestor, allAncestors: Ancestor[]) => {
+    const parent1 = ancestor.parent1Id ? allAncestors.find(a => a.id === ancestor.parent1Id) : null;
+    const parent2 = ancestor.parent2Id ? allAncestors.find(a => a.id === ancestor.parent2Id) : null;
+
+    if (!parent1 && !parent2) {
+      return null;
+    }
+
+    const getParentName = (parent: Ancestor) => {
+      return parent.firstName || parent.lastName
+        ? `${parent.firstName || ''} ${parent.lastName || ''}`.trim()
+        : parent.relationship.charAt(0).toUpperCase() + parent.relationship.slice(1).replace('-', ' ');
+    };
+
+    return (
+      <div className="detail-group" key="parents">
+        <h4>Parents</h4>
+        {parent1 && <div className="detail-item">Parent 1: {getParentName(parent1)}</div>}
+        {parent2 && <div className="detail-item">Parent 2: {getParentName(parent2)}</div>}
+      </div>
+    );
+  };
+
   const createEventDetail = (eventName: string, event?: LocationEvent) => {
     if (!event) {
       return null;
@@ -121,6 +144,7 @@ const AncestorCard: React.FC<AncestorCardProps> = ({ ancestor, allAncestors, onE
         </div>
       </div>
       <div className="ancestor-details">
+        {createParentDetails(ancestor, allAncestors)}
         {createEventDetail('Birth', ancestor.birth)}
         {createMultipleEventDetails('Marriages', ancestor.marriages, allAncestors)}
         {createMultipleEventDetails('Divorces', ancestor.divorces, allAncestors)}
