@@ -13,8 +13,8 @@ const AncestorCard: React.FC<AncestorCardProps> = ({ ancestor, allAncestors, onE
     if (ancestor.firstName || ancestor.lastName) {
       return `${ancestor.firstName || ''} ${ancestor.lastName || ''}`.trim();
     }
-    // Default to relationship name if no name provided
-    return ancestor.relationship.charAt(0).toUpperCase() + ancestor.relationship.slice(1).replace('-', ' ');
+    // Default to "Person" if no name provided
+    return 'Person';
   };
 
   const formatPartialDate = (date?: PartialDate): string => {
@@ -41,7 +41,7 @@ const AncestorCard: React.FC<AncestorCardProps> = ({ ancestor, allAncestors, onE
     const getParentName = (parent: Ancestor) => {
       return parent.firstName || parent.lastName
         ? `${parent.firstName || ''} ${parent.lastName || ''}`.trim()
-        : parent.relationship.charAt(0).toUpperCase() + parent.relationship.slice(1).replace('-', ' ');
+        : 'Person';
     };
 
     return (
@@ -66,7 +66,7 @@ const AncestorCard: React.FC<AncestorCardProps> = ({ ancestor, allAncestors, onE
     const getChildName = (child: Ancestor) => {
       return child.firstName || child.lastName
         ? `${child.firstName || ''} ${child.lastName || ''}`.trim()
-        : child.relationship.charAt(0).toUpperCase() + child.relationship.slice(1).replace('-', ' ');
+        : 'Person';
     };
 
     return (
@@ -118,7 +118,7 @@ const AncestorCard: React.FC<AncestorCardProps> = ({ ancestor, allAncestors, onE
         if (partner) {
           const partnerName = partner.firstName || partner.lastName
             ? `${partner.firstName || ''} ${partner.lastName || ''}`.trim()
-            : partner.relationship.charAt(0).toUpperCase() + partner.relationship.slice(1).replace('-', ' ');
+            : 'Person';
           partnerStr = ` to ${partnerName}`;
         }
       }
@@ -155,7 +155,6 @@ const AncestorCard: React.FC<AncestorCardProps> = ({ ancestor, allAncestors, onE
     <div className="ancestor-card">
       <div className="ancestor-header">
         <div className="ancestor-name">{displayName}</div>
-        <div className="ancestor-relationship">{ancestor.relationship.replace('-', ' ')}</div>
         <div className="ancestor-actions">
           <button
             className="btn btn-small btn-secondary"

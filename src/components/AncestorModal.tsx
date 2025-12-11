@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Ancestor, LocationEvent, RelationshipLevel } from "../types";
+import { Ancestor, LocationEvent } from "../types";
 import EventEntry from "./EventEntry";
 import Modal from "./Modal";
 
@@ -20,7 +20,6 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
 }) => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [relationship, setRelationship] = useState<RelationshipLevel | "">("");
   const [parent1Id, setParent1Id] = useState("");
   const [parent2Id, setParent2Id] = useState("");
 
@@ -49,7 +48,6 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
     if (ancestor) {
       setFirstName(ancestor.firstName || "");
       setLastName(ancestor.lastName || "");
-      setRelationship(ancestor.relationship);
       setParent1Id(ancestor.parent1Id || "");
       setParent2Id(ancestor.parent2Id || "");
 
@@ -82,7 +80,6 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
       // Reset form for new ancestor
       setFirstName("");
       setLastName("");
-      setRelationship("");
       setParent1Id("");
       setParent2Id("");
       setBirthYear("");
@@ -99,7 +96,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
       setNaturalizations([]);
       setSelectedChildrenIds([]);
     }
-  }, [ancestor]);
+  }, [ancestor, availablePartners]);
 
   const validateDateField = (
     field: string,
@@ -171,15 +168,9 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!relationship) {
-      alert("Please select a relationship.");
-      return;
-    }
-
     const ancestorData: Omit<Ancestor, "id" | "createdAt" | "updatedAt"> = {
       firstName: firstName.trim() || undefined,
       lastName: lastName.trim() || undefined,
-      relationship: relationship as RelationshipLevel,
       parent1Id: parent1Id || undefined,
       parent2Id: parent2Id || undefined,
       birth: createLocationEvent(birthYear, birthMonth, birthDay, birthCountry),
@@ -285,9 +276,34 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
     }
   }, []);
 
+  // Helper function to get display name for dropdowns
+  const getDisplayName = (person: Ancestor): string => {
+    if (person.firstName || person.lastName) {
+      return `${person.firstName || ''} ${person.lastName || ''}`.trim();
+    }
+
+    // Find self to infer relationship
+    const selfPerson = availablePartners.find(a => !a.parent1Id && !a.parent2Id) || availablePartners[0];
+    if (selfPerson) {
+      if (person.id === selfPerson.id) return 'Self';
+
+      // Check if this person is a parent of self
+      if (selfPerson.parent1Id === person.id || selfPerson.parent2Id === person.id) {
+        return 'Parent';
+      }
+
+      // Check if this person is a child of self
+      if (person.parent1Id === selfPerson.id || person.parent2Id === selfPerson.id) {
+        return 'Child';
+      }
+    }
+
+    return 'Relative';
+  };
+
   return (
     <Modal
-      title={ancestor ? "Edit Ancestor" : "Add Ancestor"}
+      title={ancestor ? "Edit Person" : "Add Person"}
       onClose={onClose}
     >
       <form className="form" onSubmit={handleSubmit}>
@@ -298,7 +314,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
             id="first-name"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
-            placeholder="Leave blank to use relationship as label"
+            placeholder="Enter first name"
           />
         </div>
 
@@ -309,29 +325,8 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
             id="last-name"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
-            placeholder="Leave blank to use relationship as label"
+            placeholder="Enter last name"
           />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="relationship">Relationship:</label>
-          <select
-            id="relationship"
-            value={relationship}
-            onChange={(e) =>
-              setRelationship(e.target.value as RelationshipLevel)
-            }
-            required
-          >
-            <option value="">Select relationship</option>
-            <option value="self">Self</option>
-            <option value="parent">Parent</option>
-            <option value="grandparent">Grandparent</option>
-            <option value="great-grandparent">Great Grandparent</option>
-            <option value="great-great-grandparent">
-              Great Great Grandparent
-            </option>
-          </select>
         </div>
 
         <div className="form-group">
@@ -348,13 +343,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
                   partner.id !== ancestor?.id && partner.id !== parent2Id
               )
               .map((partner) => {
-                const displayName =
-                  partner.firstName || partner.lastName
-                    ? `${partner.firstName || ""} ${
-                        partner.lastName || ""
-                      }`.trim()
-                    : partner.relationship.charAt(0).toUpperCase() +
-                      partner.relationship.slice(1).replace("-", " ");
+                const displayName = getDisplayName(partner);
                 return (
                   <option key={partner.id} value={partner.id}>
                     {displayName}
@@ -378,13 +367,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
                   partner.id !== ancestor?.id && partner.id !== parent1Id
               )
               .map((partner) => {
-                const displayName =
-                  partner.firstName || partner.lastName
-                    ? `${partner.firstName || ""} ${
-                        partner.lastName || ""
-                      }`.trim()
-                    : partner.relationship.charAt(0).toUpperCase() +
-                      partner.relationship.slice(1).replace("-", " ");
+                const displayName = getDisplayName(partner);
                 return (
                   <option key={partner.id} value={partner.id}>
                     {displayName}
@@ -588,9 +571,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
           <legend>Children</legend>
           {getEligibleChildren().map(child => {
             const isSelected = selectedChildrenIds.includes(child.id);
-            const displayName = child.firstName || child.lastName
-              ? `${child.firstName || ""} ${child.lastName || ""}`.trim()
-              : child.relationship.charAt(0).toUpperCase() + child.relationship.slice(1).replace("-", " ");
+            const displayName = getDisplayName(child);
 
             return (
               <div key={child.id} className="form-group">
@@ -618,7 +599,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
 
         <div className="form-actions">
           <button type="submit" className="btn btn-primary">
-            Save Ancestor
+            Save Person
           </button>
           <button type="button" className="btn btn-secondary" onClick={onClose}>
             Cancel

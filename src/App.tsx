@@ -79,8 +79,6 @@ function App() {
               } else if (!child.parent2Id) {
                 updates.parent2Id = savedAncestor.id;
               }
-              // Note: With unlimited parents, we could extend this to parent3Id, parent4Id, etc.
-              // For now, we'll stick with parent1Id and parent2Id but allow multiple people to be children
 
               if (Object.keys(updates).length > 0) {
                 storage.updateAncestor(childId, updates);
@@ -121,6 +119,43 @@ function App() {
       console.error('Error saving ancestor:', error);
       showNotification('Failed to save ancestor.', 'error');
     }
+  };
+
+  const handleAddParent = (childId: string) => {
+    const child = storage.ancestors.find(a => a.id === childId);
+    if (!child) return;
+
+    // Create a new parent ancestor
+    const parentData: Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'> = {};
+    const newParent = storage.addAncestor(parentData);
+
+    // Link the parent to the child
+    const updates: Partial<Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'>> = {};
+    if (!child.parent1Id) {
+      updates.parent1Id = newParent.id;
+    } else if (!child.parent2Id) {
+      updates.parent2Id = newParent.id;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      storage.updateAncestor(childId, updates);
+    }
+
+    // Open the edit modal for the new parent
+    setEditingAncestor(newParent);
+    setIsAncestorModalOpen(true);
+  };
+
+  const handleAddChild = (parentId: string) => {
+    // Create a new child ancestor
+    const childData: Omit<Ancestor, 'id' | 'createdAt' | 'updatedAt'> = {
+      parent1Id: parentId
+    };
+    const newChild = storage.addAncestor(childData);
+
+    // Open the edit modal for the new child
+    setEditingAncestor(newChild);
+    setIsAncestorModalOpen(true);
   };
 
   const handleClearAll = () => {
@@ -184,6 +219,8 @@ function App() {
         ancestors={storage.ancestors}
         onEditAncestor={handleEditAncestor}
         onDeleteAncestor={handleDeleteAncestor}
+        onAddParent={handleAddParent}
+        onAddChild={handleAddChild}
       />
 
       {isAncestorModalOpen && (

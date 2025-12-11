@@ -19,15 +19,8 @@ const FamilyTree: React.FC<FamilyTreeProps> = ({ ancestors, onEditAncestor, onDe
     );
   }
 
-  // Sort ancestors by relationship hierarchy
-  const relationshipOrder = ['self', 'parent', 'grandparent', 'great-grandparent', 'great-great-grandparent'];
+  // Sort ancestors by creation date
   const sortedAncestors = [...ancestors].sort((a, b) => {
-    const aIndex = relationshipOrder.indexOf(a.relationship);
-    const bIndex = relationshipOrder.indexOf(b.relationship);
-    if (aIndex !== bIndex) {
-      return aIndex - bIndex;
-    }
-    // Secondary sort by creation date
     return a.createdAt - b.createdAt;
   });
 

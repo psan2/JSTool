@@ -1,11 +1,71 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Ancestor, FamilyHistoryData, LocationEvent } from '../types';
 
+// Helper function to infer relationship based on family tree position
+function inferRelationship(ancestor: Ancestor, allAncestors: Ancestor[], selfId: string): string {
+  if (ancestor.id === selfId) return 'Self';
+
+  // Check if this person is a parent of self
+  const selfAncestor = allAncestors.find(a => a.id === selfId);
+  if (selfAncestor && (selfAncestor.parent1Id === ancestor.id || selfAncestor.parent2Id === ancestor.id)) {
+    return 'Parent';
+  }
+
+  // Check if this person is a child of self
+  if (ancestor.parent1Id === selfId || ancestor.parent2Id === selfId) {
+    return 'Child';
+  }
+
+  // Check if this person is a grandparent (parent of self's parent)
+  if (selfAncestor) {
+    const parent1 = allAncestors.find(a => a.id === selfAncestor.parent1Id);
+    const parent2 = allAncestors.find(a => a.id === selfAncestor.parent2Id);
+
+    if ((parent1 && (parent1.parent1Id === ancestor.id || parent1.parent2Id === ancestor.id)) ||
+        (parent2 && (parent2.parent1Id === ancestor.id || parent2.parent2Id === ancestor.id))) {
+      return 'Grandparent';
+    }
+  }
+
+  // Check if this person is a grandchild (child of self's child)
+  const children = allAncestors.filter(a => a.parent1Id === selfId || a.parent2Id === selfId);
+  for (const child of children) {
+    if (ancestor.parent1Id === child.id || ancestor.parent2Id === child.id) {
+      return 'Grandchild';
+    }
+  }
+
+  return 'Relative';
+}
+
 const STORAGE_KEY = 'family-history-data';
 const CURRENT_VERSION = '2.0.0';
 
 export const useStorage = () => {
-  const [data, setData] = useState<FamilyHistoryData>(() => loadFromStorage());
+  const [data, setData] = useState<FamilyHistoryData>(() => {
+    const loadedData = loadFromStorage();
+
+    // If no ancestors exist, create a default "Self" ancestor
+    if (loadedData.ancestors.length === 0) {
+      const now = Date.now();
+      const selfAncestor: Ancestor = {
+        id: generateId(),
+        createdAt: now,
+        updatedAt: now
+      };
+
+      const dataWithSelf = {
+        ...loadedData,
+        ancestors: [selfAncestor]
+      };
+
+      // Save to storage immediately
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataWithSelf));
+      return dataWithSelf;
+    }
+
+    return loadedData;
+  });
 
   const createEmptyData = useCallback((): FamilyHistoryData => {
     const now = Date.now();
@@ -166,7 +226,7 @@ export const useStorage = () => {
 
       // Validate each ancestor has required fields
       for (const ancestor of parsed.ancestors) {
-        if (!ancestor.id || !ancestor.relationship) {
+        if (!ancestor.id) {
           throw new Error('Invalid ancestor data structure');
         }
       }

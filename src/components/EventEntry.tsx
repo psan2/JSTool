@@ -180,7 +180,7 @@ const EventEntry: React.FC<EventEntryProps> = ({
               .map(partner => {
                 const displayName = partner.firstName || partner.lastName
                   ? `${partner.firstName || ''} ${partner.lastName || ''}`.trim()
-                  : partner.relationship.charAt(0).toUpperCase() + partner.relationship.slice(1).replace('-', ' ');
+                  : 'Person';
                 return (
                   <option key={partner.id} value={partner.id}>
                     {displayName}

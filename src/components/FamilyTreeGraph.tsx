@@ -5,6 +5,8 @@ interface FamilyTreeGraphProps {
   ancestors: Ancestor[];
   onEditAncestor: (ancestor: Ancestor) => void;
   onDeleteAncestor: (id: string) => void;
+  onAddParent: (childId: string) => void;
+  onAddChild: (parentId: string) => void;
 }
 
 interface TreeNode {
@@ -12,6 +14,7 @@ interface TreeNode {
   x: number;
   y: number;
   generation: number;
+  relationship: string;
 }
 
 interface Connection {
@@ -20,18 +23,60 @@ interface Connection {
   type: 'parent' | 'marriage';
 }
 
-const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({ ancestors, onEditAncestor, onDeleteAncestor }) => {
+// Helper function to infer relationship based on family tree position
+function inferRelationship(ancestor: Ancestor, allAncestors: Ancestor[], selfId: string): string {
+  if (ancestor.id === selfId) return 'Self';
+
+  // Check if this person is a parent of self
+  const selfAncestor = allAncestors.find(a => a.id === selfId);
+  if (selfAncestor && (selfAncestor.parent1Id === ancestor.id || selfAncestor.parent2Id === ancestor.id)) {
+    return 'Parent';
+  }
+
+  // Check if this person is a child of self
+  if (ancestor.parent1Id === selfId || ancestor.parent2Id === selfId) {
+    return 'Child';
+  }
+
+  // Check if this person is a grandparent (parent of self's parent)
+  if (selfAncestor) {
+    const parent1 = allAncestors.find(a => a.id === selfAncestor.parent1Id);
+    const parent2 = allAncestors.find(a => a.id === selfAncestor.parent2Id);
+
+    if ((parent1 && (parent1.parent1Id === ancestor.id || parent1.parent2Id === ancestor.id)) ||
+        (parent2 && (parent2.parent1Id === ancestor.id || parent2.parent2Id === ancestor.id))) {
+      return 'Grandparent';
+    }
+  }
+
+  // Check if this person is a grandchild (child of self's child)
+  const children = allAncestors.filter(a => a.parent1Id === selfId || a.parent2Id === selfId);
+  for (const child of children) {
+    if (ancestor.parent1Id === child.id || ancestor.parent2Id === child.id) {
+      return 'Grandchild';
+    }
+  }
+
+  return 'Relative';
+}
+
+const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
+  ancestors,
+  onEditAncestor,
+  onDeleteAncestor,
+  onAddParent,
+  onAddChild
+}) => {
   const { nodes, connections, dimensions } = useMemo(() => {
     if (ancestors.length === 0) {
       return { nodes: [], connections: [], dimensions: { width: 800, height: 400 } };
     }
 
     // Find the "self" person as the root of the tree
-    const selfPerson = ancestors.find(a => a.relationship === 'self');
-    if (!selfPerson) {
-      // If no self, use the first person as root
-      return buildTreeFromRoot(ancestors[0], ancestors);
-    }
+    const selfPerson = ancestors.find(a => {
+      // Self is someone with no parents, or the first ancestor if none qualify
+      return !a.parent1Id && !a.parent2Id;
+    }) || ancestors[0];
 
     return buildTreeFromRoot(selfPerson, ancestors);
   }, [ancestors]);
@@ -40,14 +85,18 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({ ancestors, onEditAnce
     if (ancestor.firstName || ancestor.lastName) {
       return `${ancestor.firstName || ''} ${ancestor.lastName || ''}`.trim();
     }
-    return ancestor.relationship.charAt(0).toUpperCase() + ancestor.relationship.slice(1).replace('-', ' ');
+
+    // Find self to infer relationship
+    const selfPerson = ancestors.find(a => !a.parent1Id && !a.parent2Id) || ancestors[0];
+    const relationship = inferRelationship(ancestor, ancestors, selfPerson.id);
+    return relationship;
   };
 
   if (ancestors.length === 0) {
     return (
       <div className="family-tree">
         <div className="empty-state">
-          <p>No ancestors added yet. Click "Add Ancestor" to get started.</p>
+          <p>Loading family tree...</p>
         </div>
       </div>
     );
@@ -88,11 +137,32 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({ ancestors, onEditAnce
           {/* Render nodes */}
           {nodes.map((node) => {
             const displayName = getDisplayName(node.ancestor);
-            const nodeWidth = Math.max(displayName.length * 8 + 20, 120);
-            const nodeHeight = 60;
+            const nodeWidth = Math.max(displayName.length * 8 + 40, 140);
+            const nodeHeight = 80;
 
             return (
               <g key={node.ancestor.id}>
+                {/* Add Parent button (above node) */}
+                <circle
+                  cx={node.x}
+                  cy={node.y - nodeHeight / 2 - 25}
+                  r="12"
+                  fill="#27ae60"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => onAddParent(node.ancestor.id)}
+                />
+                <text
+                  x={node.x}
+                  y={node.y - nodeHeight / 2 - 21}
+                  textAnchor="middle"
+                  fontSize="16"
+                  fill="white"
+                  style={{ cursor: 'pointer', userSelect: 'none' }}
+                  onClick={() => onAddParent(node.ancestor.id)}
+                >
+                  +
+                </text>
+
                 {/* Node background */}
                 <rect
                   x={node.x - nodeWidth / 2}
@@ -103,20 +173,17 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({ ancestors, onEditAnce
                   stroke="#3498db"
                   strokeWidth="2"
                   rx="8"
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => onEditAncestor(node.ancestor)}
                 />
 
                 {/* Node text */}
                 <text
                   x={node.x}
-                  y={node.y - 5}
+                  y={node.y - 10}
                   textAnchor="middle"
                   fontSize="14"
                   fontWeight="bold"
                   fill="#2c3e50"
-                  style={{ cursor: 'pointer', userSelect: 'none' }}
-                  onClick={() => onEditAncestor(node.ancestor)}
+                  style={{ userSelect: 'none' }}
                 >
                   {displayName}
                 </text>
@@ -125,42 +192,77 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({ ancestors, onEditAnce
                 {node.ancestor.birth?.date?.year && (
                   <text
                     x={node.x}
-                    y={node.y + 12}
+                    y={node.y + 8}
                     textAnchor="middle"
                     fontSize="11"
                     fill="#7f8c8d"
-                    style={{ cursor: 'pointer', userSelect: 'none' }}
-                    onClick={() => onEditAncestor(node.ancestor)}
+                    style={{ userSelect: 'none' }}
                   >
                     b. {node.ancestor.birth.date.year}
                   </text>
                 )}
 
-                {/* Delete button */}
+                {/* Edit button */}
                 <circle
-                  cx={node.x + nodeWidth / 2 - 10}
-                  cy={node.y - nodeHeight / 2 + 10}
-                  r="8"
-                  fill="#e74c3c"
+                  cx={node.x + nodeWidth / 2 - 15}
+                  cy={node.y - nodeHeight / 2 + 15}
+                  r="10"
+                  fill="#3498db"
                   style={{ cursor: 'pointer' }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteAncestor(node.ancestor.id);
-                  }}
+                  onClick={() => onEditAncestor(node.ancestor)}
                 />
                 <text
-                  x={node.x + nodeWidth / 2 - 10}
-                  y={node.y - nodeHeight / 2 + 14}
+                  x={node.x + nodeWidth / 2 - 15}
+                  y={node.y - nodeHeight / 2 + 19}
                   textAnchor="middle"
                   fontSize="10"
                   fill="white"
                   style={{ cursor: 'pointer', userSelect: 'none' }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteAncestor(node.ancestor.id);
-                  }}
+                  onClick={() => onEditAncestor(node.ancestor)}
+                >
+                  ✎
+                </text>
+
+                {/* Delete button */}
+                <circle
+                  cx={node.x + nodeWidth / 2 - 15}
+                  cy={node.y + nodeHeight / 2 - 15}
+                  r="8"
+                  fill="#e74c3c"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => onDeleteAncestor(node.ancestor.id)}
+                />
+                <text
+                  x={node.x + nodeWidth / 2 - 15}
+                  y={node.y + nodeHeight / 2 - 11}
+                  textAnchor="middle"
+                  fontSize="10"
+                  fill="white"
+                  style={{ cursor: 'pointer', userSelect: 'none' }}
+                  onClick={() => onDeleteAncestor(node.ancestor.id)}
                 >
                   ×
+                </text>
+
+                {/* Add Child button (below node) */}
+                <circle
+                  cx={node.x}
+                  cy={node.y + nodeHeight / 2 + 25}
+                  r="12"
+                  fill="#27ae60"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => onAddChild(node.ancestor.id)}
+                />
+                <text
+                  x={node.x}
+                  y={node.y + nodeHeight / 2 + 29}
+                  textAnchor="middle"
+                  fontSize="16"
+                  fill="white"
+                  style={{ cursor: 'pointer', userSelect: 'none' }}
+                  onClick={() => onAddChild(node.ancestor.id)}
+                >
+                  +
                 </text>
               </g>
             );
@@ -180,7 +282,7 @@ function buildTreeFromRoot(root: Ancestor, allAncestors: Ancestor[]) {
   const NODE_WIDTH = 150;
   const NODE_HEIGHT = 80;
   const GENERATION_HEIGHT = 120;
-  const MIN_HORIZONTAL_SPACING = 180;
+  const MIN_HORIZONTAL_SPACING = 200;
 
   // Build generation levels
   const generations = new Map<number, Ancestor[]>();
@@ -204,11 +306,14 @@ function buildTreeFromRoot(root: Ancestor, allAncestors: Ancestor[]) {
       const x = (index * MIN_HORIZONTAL_SPACING) + MIN_HORIZONTAL_SPACING / 2;
       const y = currentY - (generation * GENERATION_HEIGHT);
 
+      const relationship = inferRelationship(ancestor, allAncestors, root.id);
+
       const node: TreeNode = {
         ancestor,
         x,
         y,
-        generation
+        generation,
+        relationship
       };
 
       nodes.push(node);
@@ -263,7 +368,7 @@ function buildTreeFromRoot(root: Ancestor, allAncestors: Ancestor[]) {
 
   const dimensions = {
     width: Math.max(maxWidth + 200, 800),
-    height: Math.max((sortedGenerations.length * GENERATION_HEIGHT) + 200, 400)
+    height: Math.max((sortedGenerations.length * GENERATION_HEIGHT) + 200, 500)
   };
 
   return { nodes, connections, dimensions };
