@@ -139,7 +139,7 @@ export class StorageManager {
 
             // Validate each ancestor has required fields
             for (const ancestor of parsed.ancestors) {
-                if (!ancestor.id || !ancestor.firstInitial || !ancestor.lastInitial || !ancestor.relationship) {
+                if (!ancestor.id || !ancestor.relationship) {
                     throw new Error('Invalid ancestor data structure');
                 }
             }

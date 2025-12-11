@@ -13,12 +13,13 @@ export interface LocationEvent {
 
 export interface Ancestor {
     id: string;
-    firstInitial: string;
-    lastInitial: string;
+    firstName?: string;
+    lastName?: string;
     relationship: 'self' | 'parent' | 'grandparent' | 'great-grandparent' | 'great-great-grandparent';
     birth?: LocationEvent;
-    marriage?: LocationEvent;
-    naturalization?: LocationEvent;
+    marriages?: LocationEvent[];
+    divorces?: LocationEvent[];
+    naturalizations?: LocationEvent[];
     death?: LocationEvent;
     createdAt: number;
     updatedAt: number;
@@ -35,23 +36,39 @@ export type RelationshipLevel = 'self' | 'parent' | 'grandparent' | 'great-grand
 
 // Utility type for form data
 export interface AncestorFormData {
-    firstInitial: string;
-    lastInitial: string;
+    firstName?: string;
+    lastName?: string;
     relationship: RelationshipLevel;
     birthYear?: string;
     birthMonth?: string;
     birthDay?: string;
     birthCountry?: string;
-    marriageYear?: string;
-    marriageMonth?: string;
-    marriageDay?: string;
-    marriageCountry?: string;
-    naturalizationYear?: string;
-    naturalizationMonth?: string;
-    naturalizationDay?: string;
-    naturalizationCountry?: string;
+    marriages: MarriageFormData[];
+    divorces: DivorceFormData[];
+    naturalizations: NaturalizationFormData[];
     deathYear?: string;
     deathMonth?: string;
     deathDay?: string;
     deathCountry?: string;
+}
+
+export interface MarriageFormData {
+    year?: string;
+    month?: string;
+    day?: string;
+    country?: string;
+}
+
+export interface DivorceFormData {
+    year?: string;
+    month?: string;
+    day?: string;
+    country?: string;
+}
+
+export interface NaturalizationFormData {
+    year?: string;
+    month?: string;
+    day?: string;
+    country?: string;
 }

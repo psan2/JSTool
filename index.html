@@ -35,12 +35,12 @@
                 </div>
                 <form id="ancestor-form">
                     <div class="form-group">
-                        <label for="first-initial">First Initial:</label>
-                        <input type="text" id="first-initial" maxlength="1" pattern="[A-Za-z]" required>
+                        <label for="first-name">First Name (optional):</label>
+                        <input type="text" id="first-name" placeholder="Leave blank to use relationship as label">
                     </div>
                     <div class="form-group">
-                        <label for="last-initial">Last Initial:</label>
-                        <input type="text" id="last-initial" maxlength="1" pattern="[A-Za-z]" required>
+                        <label for="last-name">Last Name (optional):</label>
+                        <input type="text" id="last-name" placeholder="Leave blank to use relationship as label">
                     </div>
                     <div class="form-group">
                         <label for="relationship">Relationship:</label>
@@ -72,34 +72,26 @@
 
                     <fieldset>
                         <legend>Marriage Information</legend>
-                        <div class="date-input-group">
-                            <label for="marriage-year">Year:</label>
-                            <input type="number" id="marriage-year" min="1800" max="2024">
-                            <label for="marriage-month">Month:</label>
-                            <input type="number" id="marriage-month" min="1" max="12">
-                            <label for="marriage-day">Day:</label>
-                            <input type="number" id="marriage-day" min="1" max="31">
+                        <div id="marriages-container">
+                            <!-- Marriage entries will be added dynamically -->
                         </div>
-                        <div class="form-group">
-                            <label for="marriage-country">Country:</label>
-                            <input type="text" id="marriage-country">
+                        <button type="button" id="add-marriage-btn" class="btn btn-secondary btn-small">Add Marriage</button>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Divorce Information</legend>
+                        <div id="divorces-container">
+                            <!-- Divorce entries will be added dynamically -->
                         </div>
+                        <button type="button" id="add-divorce-btn" class="btn btn-secondary btn-small">Add Divorce</button>
                     </fieldset>
 
                     <fieldset>
                         <legend>Naturalization Information</legend>
-                        <div class="date-input-group">
-                            <label for="naturalization-year">Year:</label>
-                            <input type="number" id="naturalization-year" min="1800" max="2024">
-                            <label for="naturalization-month">Month:</label>
-                            <input type="number" id="naturalization-month" min="1" max="12">
-                            <label for="naturalization-day">Day:</label>
-                            <input type="number" id="naturalization-day" min="1" max="31">
+                        <div id="naturalizations-container">
+                            <!-- Naturalization entries will be added dynamically -->
                         </div>
-                        <div class="form-group">
-                            <label for="naturalization-country">Country:</label>
-                            <input type="text" id="naturalization-country">
-                        </div>
+                        <button type="button" id="add-naturalization-btn" class="btn btn-secondary btn-small">Add Naturalization</button>
                     </fieldset>
 
                     <fieldset>
