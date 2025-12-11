@@ -257,6 +257,13 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
       // Can't be a child of themselves
       if (potentialChild.id === ancestor?.id) return false;
 
+      // Can't be a current or former spouse
+      const isCurrentSpouse = marriages.some(marriage => marriage.partnerId === potentialChild.id);
+      const isFormerSpouse = divorces.some(divorce => divorce.partnerId === potentialChild.id);
+
+      if (isCurrentSpouse || isFormerSpouse) {
+        return false; // Exclude spouses from potential children
+      }
 
       // Birth date validation - parents must be older than children
       const childBirthYear = potentialChild.birth?.date?.year;
@@ -268,7 +275,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
 
       return true;
     });
-  }, [availablePartners, ancestor, birthYear]);
+  }, [availablePartners, ancestor, birthYear, marriages, divorces]);
 
   const handleChildToggle = useCallback((childId: string, isSelected: boolean) => {
     if (isSelected) {
@@ -603,7 +610,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
           {getEligibleChildren().length === 0 && (
             <div className="form-group">
               <p style={{ fontStyle: 'italic', color: '#666' }}>
-                No eligible children available. Parents must be older than their children.
+                No eligible children available. Parents must be older than their children and cannot be current or former spouses.
               </p>
             </div>
           )}
