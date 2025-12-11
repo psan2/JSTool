@@ -353,12 +353,18 @@ function buildTreeFromRoot(root: Ancestor, allAncestors: Ancestor[]) {
   // Process generations from bottom (0) to top
   const sortedGenerations = Array.from(generations.entries()).sort((a, b) => a[0] - b[0]);
 
+  // Calculate the maximum number of nodes in any generation for consistent spacing
+  const maxNodesInGeneration = Math.max(...Array.from(generations.values()).map(gen => gen.length));
+  const totalTreeWidth = maxNodesInGeneration * MIN_HORIZONTAL_SPACING;
+  maxWidth = Math.max(maxWidth, totalTreeWidth);
+
   sortedGenerations.forEach(([generation, ancestorsInGen]) => {
+    // Center nodes within the total tree width
     const genWidth = ancestorsInGen.length * MIN_HORIZONTAL_SPACING;
-    maxWidth = Math.max(maxWidth, genWidth);
+    const startX = (totalTreeWidth - genWidth) / 2;
 
     ancestorsInGen.forEach((ancestor, index) => {
-      const x = (index * MIN_HORIZONTAL_SPACING) + MIN_HORIZONTAL_SPACING / 2;
+      const x = startX + (index * MIN_HORIZONTAL_SPACING) + MIN_HORIZONTAL_SPACING / 2;
       const y = currentY - (generation * GENERATION_HEIGHT);
 
       const relationship = inferRelationship(ancestor, allAncestors, root.id);
@@ -376,7 +382,7 @@ function buildTreeFromRoot(root: Ancestor, allAncestors: Ancestor[]) {
     });
   });
 
-  // Center all nodes horizontally
+  // Center all nodes horizontally within the canvas
   const totalWidth = maxWidth + 200; // Add padding
   const offsetX = totalWidth / 2 - maxWidth / 2;
 
