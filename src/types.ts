@@ -16,8 +16,8 @@ export interface Ancestor {
     id: string;
     firstName?: string;
     lastName?: string;
-    parent1Id?: string; // ID of first parent
-    parent2Id?: string; // ID of second parent
+    parentIds?: string[]; // Array of parent IDs (supports any number of parents)
+    generation: number; // Vertical position in tree: 0 = Self, positive = ancestors, negative = descendants
     birth?: LocationEvent;
     marriages?: LocationEvent[];
     divorces?: LocationEvent[];

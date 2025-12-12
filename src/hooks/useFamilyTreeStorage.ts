@@ -35,6 +35,8 @@ export const useFamilyTreeStorage = () => {
           const now = Date.now();
           const selfAncestor: Ancestor = {
             id: generateId(),
+            firstName: 'Self',
+            generation: 0,
             createdAt: now,
             updatedAt: now
           };
@@ -152,10 +154,29 @@ export const useFamilyTreeStorage = () => {
     return true;
   };
 
+  const batchUpdateAncestors = (updatedAncestors: Ancestor[]): boolean => {
+    try {
+      dispatch({
+        type: 'SET_DATA',
+        payload: {
+          ...state.data,
+          ancestors: updatedAncestors,
+          updatedAt: Date.now()
+        }
+      });
+      return true;
+    } catch (error) {
+      console.error('Error in batch update:', error);
+      return false;
+    }
+  };
+
   const clearAllData = (): void => {
     const now = Date.now();
     const selfAncestor: Ancestor = {
       id: generateId(),
+      firstName: 'Self',
+      generation: 0,
       createdAt: now,
       updatedAt: now
     };
@@ -237,6 +258,7 @@ export const useFamilyTreeStorage = () => {
     addAncestor,
     updateAncestor,
     deleteAncestor,
+    batchUpdateAncestors,
     clearAllData,
 
     // Import/Export

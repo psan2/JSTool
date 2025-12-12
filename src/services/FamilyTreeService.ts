@@ -8,30 +8,29 @@ export class FamilyTreeService {
     const selfAncestor = allAncestors.find(a => a.id === selfId);
 
     // Check if this ancestor is a parent of self
-    if (selfAncestor && (selfAncestor.parent1Id === ancestor.id || selfAncestor.parent2Id === ancestor.id)) {
+    if (selfAncestor && selfAncestor.parentIds?.includes(ancestor.id)) {
       return 'Parent';
     }
 
     // Check if this ancestor is a child of self
-    if (ancestor.parent1Id === selfId || ancestor.parent2Id === selfId) {
+    if (ancestor.parentIds?.includes(selfId)) {
       return 'Child';
     }
 
     // Check if this ancestor is a grandparent (parent of self's parent)
-    if (selfAncestor) {
-      const parent1 = allAncestors.find(a => a.id === selfAncestor.parent1Id);
-      const parent2 = allAncestors.find(a => a.id === selfAncestor.parent2Id);
-
-      if ((parent1 && (parent1.parent1Id === ancestor.id || parent1.parent2Id === ancestor.id)) ||
-          (parent2 && (parent2.parent1Id === ancestor.id || parent2.parent2Id === ancestor.id))) {
-        return 'Grandparent';
+    if (selfAncestor && selfAncestor.parentIds) {
+      for (const parentId of selfAncestor.parentIds) {
+        const parent = allAncestors.find(a => a.id === parentId);
+        if (parent && parent.parentIds?.includes(ancestor.id)) {
+          return 'Grandparent';
+        }
       }
     }
 
     // Check if this ancestor is a grandchild (child of self's child)
-    const children = allAncestors.filter(a => a.parent1Id === selfId || a.parent2Id === selfId);
+    const children = allAncestors.filter(a => a.parentIds?.includes(selfId));
     for (const child of children) {
-      if (ancestor.parent1Id === child.id || ancestor.parent2Id === child.id) {
+      if (ancestor.parentIds?.includes(child.id)) {
         return 'Grandchild';
       }
     }
@@ -48,7 +47,7 @@ export class FamilyTreeService {
     }
 
     // Only show relationship if no name is provided
-    const selfPerson = allAncestors.find(a => !a.parent1Id && !a.parent2Id) || allAncestors[0];
+    const selfPerson = allAncestors.find(a => !a.parentIds || a.parentIds.length === 0) || allAncestors[0];
     if (selfPerson) {
       return this.inferRelationship(ancestor, allAncestors, selfPerson.id);
     }
@@ -160,7 +159,7 @@ export class FamilyTreeService {
   static isNewUser(ancestors: Ancestor[]): boolean {
     if (ancestors.length !== 1) return false;
 
-    const selfPerson = ancestors.find(a => !a.parent1Id && !a.parent2Id) || ancestors[0];
+    const selfPerson = ancestors.find(a => !a.parentIds || a.parentIds.length === 0) || ancestors[0];
     return !selfPerson.firstName && !selfPerson.lastName &&
            !selfPerson.birth && !selfPerson.marriages?.length &&
            !selfPerson.divorces?.length && !selfPerson.naturalizations?.length &&

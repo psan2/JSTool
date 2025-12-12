@@ -87,11 +87,42 @@ function familyTreeReducer(state: FamilyTreeState, action: FamilyTreeAction): Fa
       };
 
     case 'DELETE_ANCESTOR':
+      const deletedId = action.payload;
+      const deletedAncestor = state.data.ancestors.find(a => a.id === deletedId);
+
+      // Remove the ancestor and clean up any references to it
+      const remainingAncestors = state.data.ancestors
+        .filter(a => a.id !== deletedId)
+        .map(ancestor => {
+          const updates: Partial<Ancestor> = {};
+
+          // Clean up parent references
+          if (ancestor.parentIds?.includes(deletedId)) {
+            updates.parentIds = ancestor.parentIds.filter(id => id !== deletedId);
+            if (updates.parentIds.length === 0) {
+              updates.parentIds = undefined;
+            }
+          }
+
+          // Clean up marriage/divorce references
+          if (ancestor.marriages) {
+            updates.marriages = ancestor.marriages.filter(m => m.partnerId !== deletedId);
+          }
+          if (ancestor.divorces) {
+            updates.divorces = ancestor.divorces.filter(d => d.partnerId !== deletedId);
+          }
+
+          // Return updated ancestor if there are changes, otherwise return original
+          return Object.keys(updates).length > 0
+            ? { ...ancestor, ...updates, updatedAt: Date.now() }
+            : ancestor;
+        });
+
       return {
         ...state,
         data: {
           ...state.data,
-          ancestors: state.data.ancestors.filter(a => a.id !== action.payload),
+          ancestors: remainingAncestors,
           updatedAt: Date.now()
         },
         error: null
@@ -134,7 +165,7 @@ export const FamilyTreeProvider: React.FC<FamilyTreeProviderProps> = ({
 
   // Computed values
   const ancestors = state.data.ancestors;
-  const selfAncestor = ancestors.find(a => !a.parent1Id && !a.parent2Id) || ancestors[0] || null;
+  const selfAncestor = ancestors.find(a => !a.parentIds || a.parentIds.length === 0) || ancestors[0] || null;
 
   const contextValue: FamilyTreeContextType = {
     state,

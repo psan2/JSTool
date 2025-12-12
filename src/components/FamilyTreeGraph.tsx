@@ -41,30 +41,32 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
       };
     }
 
-    // Find the "self" person as the root of the tree
-    const selfPerson =
-      ancestors.find((a) => {
-        // Self is someone with no parents, or the first ancestor if none qualify
-        return !a.parent1Id && !a.parent2Id;
-      }) || ancestors[0];
+    // Find the root of the tree - the person with no parents
+    // If multiple people have no parents, use the oldest by createdAt
+    const rootCandidates = ancestors.filter(a => !a.parentIds || a.parentIds.length === 0);
+    const selfPerson = rootCandidates.length > 0
+      ? rootCandidates.reduce((oldest, current) =>
+          current.createdAt < oldest.createdAt ? current : oldest
+        , rootCandidates[0])
+      : ancestors[0]; // Fallback to first ancestor if no root found
 
     return buildTreeFromRoot(selfPerson, ancestors);
   }, [ancestors]);
 
   const getDisplayName = (ancestor: Ancestor): string => {
-    // Always prioritize actual names if they exist
+    // Return the full name (firstName + lastName)
+    // Since we now commit default relationship names to firstName,
+    // this will show either the actual name or the relationship
     const fullName = `${ancestor.firstName || ""} ${
       ancestor.lastName || ""
     }`.trim();
+
     if (fullName) {
       return fullName;
     }
 
-    // Only show relationship if no name is provided
-    const selfPerson =
-      ancestors.find((a) => !a.parent1Id && !a.parent2Id) || ancestors[0];
-    const relationship = FamilyTreeService.inferRelationship(ancestor, ancestors, selfPerson.id);
-    return relationship;
+    // Fallback to "Person" if somehow no name exists
+    return "Person";
   };
 
   if (ancestors.length === 0) {
@@ -79,7 +81,7 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
 
   // Check if we only have a blank Self ancestor (new user experience)
   const selfPerson =
-    ancestors.find((a) => !a.parent1Id && !a.parent2Id) || ancestors[0];
+    ancestors.find((a) => !a.parentIds || a.parentIds.length === 0) || ancestors[0];
   const isNewUser =
     ancestors.length === 1 &&
     !selfPerson.firstName &&
@@ -153,39 +155,40 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
             return (
               <g key={node.ancestor.id}>
                 {/* Add Parent button (above node) */}
-                <circle
-                  cx={node.x}
-                  cy={node.y - nodeHeight / 2 - 25}
-                  r="12"
-                  fill="#27ae60"
+                <g
+                  role="button"
+                  aria-label={`Add parent to ${displayName}`}
+                  tabIndex={0}
                   style={{ cursor: "pointer" }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    console.log(
-                      "Add parent button clicked for:",
-                      node.ancestor.id
-                    ); // Debug log
                     onAddParent(node.ancestor.id);
                   }}
-                />
-                <text
-                  x={node.x}
-                  y={node.y - nodeHeight / 2 - 21}
-                  textAnchor="middle"
-                  fontSize="16"
-                  fill="white"
-                  style={{ cursor: "pointer", userSelect: "none" }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    console.log(
-                      "Add parent text clicked for:",
-                      node.ancestor.id
-                    ); // Debug log
-                    onAddParent(node.ancestor.id);
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.stopPropagation();
+                      onAddParent(node.ancestor.id);
+                    }
                   }}
                 >
-                  +
-                </text>
+                  <title>Add parent to {displayName}</title>
+                  <circle
+                    cx={node.x}
+                    cy={node.y - nodeHeight / 2 - 25}
+                    r="12"
+                    fill="#27ae60"
+                  />
+                  <text
+                    x={node.x}
+                    y={node.y - nodeHeight / 2 - 21}
+                    textAnchor="middle"
+                    fontSize="16"
+                    fill="white"
+                    style={{ userSelect: "none" }}
+                  >
+                    +
+                  </text>
+                </g>
 
                 {/* Node background */}
                 <rect
@@ -227,97 +230,112 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
                 )}
 
                 {/* Edit button */}
-                <circle
-                  cx={node.x + nodeWidth / 2 - 15}
-                  cy={node.y - nodeHeight / 2 + 15}
-                  r="10"
-                  fill="#3498db"
+                <g
+                  role="button"
+                  aria-label={`Edit ${displayName}`}
+                  tabIndex={0}
                   style={{ cursor: "pointer" }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    console.log("Edit button clicked for:", node.ancestor.id); // Debug log
                     onEditAncestor(node.ancestor);
                   }}
-                />
-                <text
-                  x={node.x + nodeWidth / 2 - 15}
-                  y={node.y - nodeHeight / 2 + 19}
-                  textAnchor="middle"
-                  fontSize="10"
-                  fill="white"
-                  style={{ cursor: "pointer", userSelect: "none" }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    console.log("Edit text clicked for:", node.ancestor.id); // Debug log
-                    onEditAncestor(node.ancestor);
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.stopPropagation();
+                      onEditAncestor(node.ancestor);
+                    }
                   }}
                 >
-                  ✎
-                </text>
+                  <title>Edit {displayName}</title>
+                  <circle
+                    cx={node.x + nodeWidth / 2 - 15}
+                    cy={node.y - nodeHeight / 2 + 15}
+                    r="10"
+                    fill="#3498db"
+                  />
+                  <text
+                    x={node.x + nodeWidth / 2 - 15}
+                    y={node.y - nodeHeight / 2 + 19}
+                    textAnchor="middle"
+                    fontSize="10"
+                    fill="white"
+                    style={{ userSelect: "none" }}
+                  >
+                    ✎
+                  </text>
+                </g>
 
                 {/* Delete button */}
-                <circle
-                  cx={node.x + nodeWidth / 2 - 15}
-                  cy={node.y + nodeHeight / 2 - 15}
-                  r="8"
-                  fill="#e74c3c"
+                <g
+                  role="button"
+                  aria-label={`Delete ${displayName}`}
+                  tabIndex={0}
                   style={{ cursor: "pointer" }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    console.log("Delete button clicked for:", node.ancestor.id); // Debug log
                     onDeleteAncestor(node.ancestor.id);
                   }}
-                />
-                <text
-                  x={node.x + nodeWidth / 2 - 15}
-                  y={node.y + nodeHeight / 2 - 11}
-                  textAnchor="middle"
-                  fontSize="10"
-                  fill="white"
-                  style={{ cursor: "pointer", userSelect: "none" }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    console.log("Delete text clicked for:", node.ancestor.id); // Debug log
-                    onDeleteAncestor(node.ancestor.id);
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.stopPropagation();
+                      onDeleteAncestor(node.ancestor.id);
+                    }
                   }}
                 >
-                  ×
-                </text>
+                  <title>Delete {displayName}</title>
+                  <circle
+                    cx={node.x + nodeWidth / 2 - 15}
+                    cy={node.y + nodeHeight / 2 - 15}
+                    r="8"
+                    fill="#e74c3c"
+                  />
+                  <text
+                    x={node.x + nodeWidth / 2 - 15}
+                    y={node.y + nodeHeight / 2 - 11}
+                    textAnchor="middle"
+                    fontSize="10"
+                    fill="white"
+                    style={{ userSelect: "none" }}
+                  >
+                    ×
+                  </text>
+                </g>
 
                 {/* Add Child button (below node) */}
-                <circle
-                  cx={node.x}
-                  cy={node.y + nodeHeight / 2 + 25}
-                  r="12"
-                  fill="#27ae60"
+                <g
+                  role="button"
+                  aria-label={`Add child to ${displayName}`}
+                  tabIndex={0}
                   style={{ cursor: "pointer" }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    console.log(
-                      "Add child button clicked for:",
-                      node.ancestor.id
-                    ); // Debug log
                     onAddChild(node.ancestor.id);
                   }}
-                />
-                <text
-                  x={node.x}
-                  y={node.y + nodeHeight / 2 + 29}
-                  textAnchor="middle"
-                  fontSize="16"
-                  fill="white"
-                  style={{ cursor: "pointer", userSelect: "none" }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    console.log(
-                      "Add child text clicked for:",
-                      node.ancestor.id
-                    ); // Debug log
-                    onAddChild(node.ancestor.id);
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.stopPropagation();
+                      onAddChild(node.ancestor.id);
+                    }
                   }}
                 >
-                  +
-                </text>
+                  <title>Add child to {displayName}</title>
+                  <circle
+                    cx={node.x}
+                    cy={node.y + nodeHeight / 2 + 25}
+                    r="12"
+                    fill="#27ae60"
+                  />
+                  <text
+                    x={node.x}
+                    y={node.y + nodeHeight / 2 + 29}
+                    textAnchor="middle"
+                    fontSize="16"
+                    fill="white"
+                    style={{ userSelect: "none" }}
+                  >
+                    +
+                  </text>
+                </g>
               </g>
             );
           })}
@@ -335,60 +353,22 @@ function buildTreeFromRoot(root: Ancestor, allAncestors: Ancestor[]) {
   // Constants for layout
   const NODE_WIDTH = 150;
   const NODE_HEIGHT = 80;
-  const GENERATION_HEIGHT = 180; // Increased spacing between generations
+  const GENERATION_HEIGHT = 180; // Spacing between generations
   const MIN_HORIZONTAL_SPACING = 200;
 
-  // Build generation levels
+  // Group ancestors by their stored generation
   const generations = new Map<number, Ancestor[]>();
-  const visited = new Set<string>();
 
-  // Start with root at generation 0
-  addToGeneration(root, 0, generations, allAncestors, visited);
-
-  // Process any remaining unconnected ancestors
-  const unconnectedAncestors = allAncestors.filter((a) => !visited.has(a.id));
-  unconnectedAncestors.forEach(ancestor => {
-    // Check if this ancestor has children that are already placed
-    const hasPlacedChildren = allAncestors.some(child =>
-      visited.has(child.id) && (child.parent1Id === ancestor.id || child.parent2Id === ancestor.id)
-    );
-
-    if (hasPlacedChildren) {
-      // Find the highest generation of their children and place them one level up
-      let maxChildGeneration = -1;
-      allAncestors.forEach(child => {
-        if (visited.has(child.id) && (child.parent1Id === ancestor.id || child.parent2Id === ancestor.id)) {
-          // Find this child's generation
-          for (const [gen, ancestorsInGen] of generations.entries()) {
-            if (ancestorsInGen.some(a => a.id === child.id)) {
-              maxChildGeneration = Math.max(maxChildGeneration, gen);
-              break;
-            }
-          }
-        }
-      });
-
-      if (maxChildGeneration >= 0) {
-        const parentGeneration = maxChildGeneration + 1;
-        if (!generations.has(parentGeneration)) {
-          generations.set(parentGeneration, []);
-        }
-        generations.get(parentGeneration)!.push(ancestor);
-        visited.add(ancestor.id);
-      }
-    } else {
-      // Place truly unconnected ancestors in generation 0
-      if (!generations.has(0)) {
-        generations.set(0, []);
-      }
-      generations.get(0)!.push(ancestor);
-      visited.add(ancestor.id);
+  allAncestors.forEach(ancestor => {
+    const gen = ancestor.generation;
+    if (!generations.has(gen)) {
+      generations.set(gen, []);
     }
+    generations.get(gen)!.push(ancestor);
   });
 
   // Calculate positions
   let maxWidth = 0;
-  let currentY = 400; // Start from bottom
 
   // Process generations from bottom (0) to top
   const sortedGenerations = Array.from(generations.entries()).sort(
@@ -402,50 +382,37 @@ function buildTreeFromRoot(root: Ancestor, allAncestors: Ancestor[]) {
   const totalTreeWidth = maxNodesInGeneration * MIN_HORIZONTAL_SPACING;
   maxWidth = Math.max(maxWidth, totalTreeWidth);
 
+  // Calculate total height needed and start from appropriate Y position
+  const maxGeneration = Math.max(...Array.from(generations.keys()));
+  const minGeneration = Math.min(...Array.from(generations.keys()));
+  const totalGenerations = maxGeneration - minGeneration + 1;
+
+  // Add padding at top and bottom
+  const TOP_PADDING = 100;
+  const BOTTOM_PADDING = 100;
+
+  // Calculate Y position for generation 0 (Self)
+  // Self should be positioned so that all ancestors fit above with padding
+  const selfY = TOP_PADDING + maxGeneration * GENERATION_HEIGHT;
+
   sortedGenerations.forEach(([generation, ancestorsInGen]) => {
+    // Calculate positions for all nodes in this generation
+    // ensuring proper spacing between all nodes
+    const genWidth = ancestorsInGen.length * MIN_HORIZONTAL_SPACING;
+    const startX = (totalTreeWidth - genWidth) / 2;
+
     ancestorsInGen.forEach((ancestor, index) => {
-      let x: number;
+      // Position nodes sequentially across the generation
+      const x = startX + index * MIN_HORIZONTAL_SPACING + MIN_HORIZONTAL_SPACING / 2;
+      const y = selfY - generation * GENERATION_HEIGHT;
 
-      // For direct parent-child relationships, maintain vertical alignment
-      if (generation > 0) {
-        // Check if this ancestor is a parent of someone in the generation below
-        const childInBelowGeneration = allAncestors.find(child =>
-          child.parent1Id === ancestor.id || child.parent2Id === ancestor.id
-        );
-
-        if (childInBelowGeneration) {
-          // Find the child's position and align vertically
-          const childNode = nodes.find(node => node.ancestor.id === childInBelowGeneration.id);
-          if (childNode) {
-            x = childNode.x; // Use same x position as child
-          } else {
-            // Fallback to centered positioning
-            const genWidth = ancestorsInGen.length * MIN_HORIZONTAL_SPACING;
-            const startX = (totalTreeWidth - genWidth) / 2;
-            x = startX + index * MIN_HORIZONTAL_SPACING + MIN_HORIZONTAL_SPACING / 2;
-          }
-        } else {
-          // No direct child relationship, use centered positioning
-          const genWidth = ancestorsInGen.length * MIN_HORIZONTAL_SPACING;
-          const startX = (totalTreeWidth - genWidth) / 2;
-          x = startX + index * MIN_HORIZONTAL_SPACING + MIN_HORIZONTAL_SPACING / 2;
-        }
-      } else {
-        // Generation 0 (root level), use centered positioning
-        const genWidth = ancestorsInGen.length * MIN_HORIZONTAL_SPACING;
-        const startX = (totalTreeWidth - genWidth) / 2;
-        x = startX + index * MIN_HORIZONTAL_SPACING + MIN_HORIZONTAL_SPACING / 2;
-      }
-
-      const y = currentY - generation * GENERATION_HEIGHT;
-      const relationship = FamilyTreeService.inferRelationship(ancestor, allAncestors, root.id);
-
+      // Use the stored generation value
       const node: TreeNode = {
         ancestor,
         x,
         y,
-        generation,
-        relationship,
+        generation: ancestor.generation, // Use stored generation
+        relationship: ancestor.firstName || "Person", // Use stored name
       };
 
       nodes.push(node);
@@ -464,19 +431,13 @@ function buildTreeFromRoot(root: Ancestor, allAncestors: Ancestor[]) {
   // Create connections
   nodes.forEach((node) => {
     // Parent connections
-    if (node.ancestor.parent1Id) {
-      const parent1 = nodeMap.get(node.ancestor.parent1Id);
-      if (parent1) {
-        connections.push({ from: parent1, to: node, type: "parent" });
+    const parentIds = node.ancestor.parentIds || [];
+    parentIds.forEach(parentId => {
+      const parent = nodeMap.get(parentId);
+      if (parent) {
+        connections.push({ from: parent, to: node, type: "parent" });
       }
-    }
-
-    if (node.ancestor.parent2Id) {
-      const parent2 = nodeMap.get(node.ancestor.parent2Id);
-      if (parent2) {
-        connections.push({ from: parent2, to: node, type: "parent" });
-      }
-    }
+    });
 
     // Marriage connections
     node.ancestor.marriages?.forEach((marriage) => {
@@ -503,64 +464,10 @@ function buildTreeFromRoot(root: Ancestor, allAncestors: Ancestor[]) {
 
   const dimensions = {
     width: Math.max(maxWidth + 200, 800),
-    height: Math.max(sortedGenerations.length * GENERATION_HEIGHT + 200, 500),
+    height: Math.max(totalGenerations * GENERATION_HEIGHT + TOP_PADDING + BOTTOM_PADDING, 500),
   };
 
   return { nodes, connections, dimensions };
-}
-
-function addToGeneration(
-  ancestor: Ancestor,
-  generation: number,
-  generations: Map<number, Ancestor[]>,
-  allAncestors: Ancestor[],
-  visited: Set<string>
-) {
-  if (visited.has(ancestor.id)) return;
-  visited.add(ancestor.id);
-
-  // Add to current generation
-  if (!generations.has(generation)) {
-    generations.set(generation, []);
-  }
-  generations.get(generation)!.push(ancestor);
-
-  // Add parents to next generation up
-  if (ancestor.parent1Id) {
-    const parent1 = allAncestors.find((a) => a.id === ancestor.parent1Id);
-    if (parent1) {
-      addToGeneration(
-        parent1,
-        generation + 1,
-        generations,
-        allAncestors,
-        visited
-      );
-    }
-  }
-
-  if (ancestor.parent2Id) {
-    const parent2 = allAncestors.find((a) => a.id === ancestor.parent2Id);
-    if (parent2) {
-      addToGeneration(
-        parent2,
-        generation + 1,
-        generations,
-        allAncestors,
-        visited
-      );
-    }
-  }
-
-  // Add spouses to same generation
-  ancestor.marriages?.forEach((marriage) => {
-    if (marriage.partnerId) {
-      const spouse = allAncestors.find((a) => a.id === marriage.partnerId);
-      if (spouse && !visited.has(spouse.id)) {
-        addToGeneration(spouse, generation, generations, allAncestors, visited);
-      }
-    }
-  });
 }
 
 export default FamilyTreeGraph;

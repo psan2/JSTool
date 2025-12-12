@@ -21,8 +21,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
 }) => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [parent1Id, setParent1Id] = useState("");
-  const [parent2Id, setParent2Id] = useState("");
+  const [selectedParentIds, setSelectedParentIds] = useState<string[]>([]);
 
   // Birth info
   const [birthYear, setBirthYear] = useState("");
@@ -49,8 +48,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
     if (ancestor) {
       setFirstName(ancestor.firstName || "");
       setLastName(ancestor.lastName || "");
-      setParent1Id(ancestor.parent1Id || "");
-      setParent2Id(ancestor.parent2Id || "");
+      setSelectedParentIds(ancestor.parentIds || []);
 
       // Birth info
       setBirthYear(ancestor.birth?.date?.year?.toString() || "");
@@ -74,15 +72,14 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
 
       // Children - find all ancestors where this person is a parent
       const currentChildren = availablePartners.filter(a =>
-        a.parent1Id === ancestor.id || a.parent2Id === ancestor.id
+        a.parentIds?.includes(ancestor.id)
       ).map(child => child.id);
       setSelectedChildrenIds(currentChildren);
     } else {
       // Reset form for new ancestor
       setFirstName("");
       setLastName("");
-      setParent1Id("");
-      setParent2Id("");
+      setSelectedParentIds([]);
       setBirthYear("");
       setBirthMonth("");
       setBirthDay("");
@@ -172,8 +169,8 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
     const ancestorData: Omit<Ancestor, "id" | "createdAt" | "updatedAt"> = {
       firstName: firstName.trim() || undefined,
       lastName: lastName.trim() || undefined,
-      parent1Id: parent1Id || undefined,
-      parent2Id: parent2Id || undefined,
+      parentIds: selectedParentIds.length > 0 ? selectedParentIds : undefined,
+      generation: ancestor?.generation ?? 0, // Preserve existing generation or default to 0
       birth: createLocationEvent(birthYear, birthMonth, birthDay, birthCountry),
       marriages: marriages.filter(Boolean),
       divorces: divorces.filter(Boolean),
@@ -284,17 +281,17 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
     }
 
     // Find self to infer relationship
-    const selfPerson = availablePartners.find(a => !a.parent1Id && !a.parent2Id) || availablePartners[0];
+    const selfPerson = availablePartners.find(a => !a.parentIds || a.parentIds.length === 0) || availablePartners[0];
     if (selfPerson) {
       if (person.id === selfPerson.id) return 'Self';
 
       // Check if this person is a parent of self
-      if (selfPerson.parent1Id === person.id || selfPerson.parent2Id === person.id) {
+      if (selfPerson.parentIds?.includes(person.id)) {
         return 'Parent';
       }
 
       // Check if this person is a child of self
-      if (person.parent1Id === selfPerson.id || person.parent2Id === selfPerson.id) {
+      if (person.parentIds?.includes(selfPerson.id)) {
         return 'Child';
       }
     }
@@ -330,53 +327,51 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
           />
         </div>
 
-        <div className="form-group">
-          <label htmlFor="parent1">Parent 1 (optional):</label>
-          <select
-            id="parent1"
-            value={parent1Id}
-            onChange={(e) => setParent1Id(e.target.value)}
-          >
-            <option value="">Select parent 1 (optional)</option>
-            {availablePartners
-              .filter(
-                (partner) =>
-                  partner.id !== ancestor?.id && partner.id !== parent2Id
-              )
-              .map((partner) => {
-                const displayName = getDisplayName(partner);
-                return (
-                  <option key={partner.id} value={partner.id}>
-                    {displayName}
-                  </option>
-                );
-              })}
-          </select>
-        </div>
+        <fieldset className="fieldset">
+          <legend>Parents</legend>
+          {availablePartners
+            .filter((partner) =>
+              partner.id !== ancestor?.id &&
+              !selectedChildrenIds.includes(partner.id) // Exclude selected children
+            )
+            .map((partner) => {
+              const displayName = getDisplayName(partner);
+              const isSelected = selectedParentIds.includes(partner.id);
 
-        <div className="form-group">
-          <label htmlFor="parent2">Parent 2 (optional):</label>
-          <select
-            id="parent2"
-            value={parent2Id}
-            onChange={(e) => setParent2Id(e.target.value)}
-          >
-            <option value="">Select parent 2 (optional)</option>
-            {availablePartners
-              .filter(
-                (partner) =>
-                  partner.id !== ancestor?.id && partner.id !== parent1Id
-              )
-              .map((partner) => {
-                const displayName = getDisplayName(partner);
-                return (
-                  <option key={partner.id} value={partner.id}>
+              return (
+                <div key={partner.id} className="form-group">
+                  <label style={{ display: 'flex', alignItems: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          // Add as parent
+                          setSelectedParentIds(prev => [...prev, partner.id]);
+                        } else {
+                          // Remove as parent
+                          setSelectedParentIds(prev => prev.filter(id => id !== partner.id));
+                        }
+                      }}
+                      style={{ marginRight: "8px" }}
+                    />
                     {displayName}
-                  </option>
-                );
-              })}
-          </select>
-        </div>
+                    {partner.birth?.date?.year && ` (born ${partner.birth.date.year})`}
+                  </label>
+                </div>
+              );
+            })}
+          {availablePartners.filter((partner) =>
+            partner.id !== ancestor?.id &&
+            !selectedChildrenIds.includes(partner.id)
+          ).length === 0 && (
+            <div className="form-group">
+              <p style={{ fontStyle: 'italic', color: '#666' }}>
+                No eligible parents available.
+              </p>
+            </div>
+          )}
+        </fieldset>
 
         <fieldset className="fieldset">
           <legend>Birth Information</legend>
@@ -570,26 +565,32 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
 
         <fieldset className="fieldset">
           <legend>Children</legend>
-          {getEligibleChildren().map(child => {
-            const isSelected = selectedChildrenIds.includes(child.id);
-            const displayName = getDisplayName(child);
+          {getEligibleChildren()
+            .filter(child =>
+              !selectedParentIds.includes(child.id) // Exclude selected parents
+            )
+            .map(child => {
+              const isSelected = selectedChildrenIds.includes(child.id);
+              const displayName = getDisplayName(child);
 
-            return (
-              <div key={child.id} className="form-group">
-                <label style={{ display: 'flex', alignItems: 'center' }}>
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={(e) => handleChildToggle(child.id, e.target.checked)}
-                    style={{ marginRight: "8px" }}
-                  />
-                  {displayName}
-                  {child.birth?.date?.year && ` (born ${child.birth.date.year})`}
-                </label>
-              </div>
-            );
-          })}
-          {getEligibleChildren().length === 0 && (
+              return (
+                <div key={child.id} className="form-group">
+                  <label style={{ display: 'flex', alignItems: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={(e) => handleChildToggle(child.id, e.target.checked)}
+                      style={{ marginRight: "8px" }}
+                    />
+                    {displayName}
+                    {child.birth?.date?.year && ` (born ${child.birth.date.year})`}
+                  </label>
+                </div>
+              );
+            })}
+          {getEligibleChildren().filter(child =>
+            !selectedParentIds.includes(child.id)
+          ).length === 0 && (
             <div className="form-group">
               <p style={{ fontStyle: 'italic', color: '#666' }}>
                 No eligible children available. Parents must be older than their children and cannot be current or former spouses.
