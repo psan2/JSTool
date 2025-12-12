@@ -1,6 +1,5 @@
 import React, { useMemo } from "react";
 import { Ancestor } from "../types";
-import { FamilyTreeService } from "../services/FamilyTreeService";
 
 interface FamilyTreeGraphProps {
   ancestors: Ancestor[];
@@ -345,14 +344,12 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
   );
 };
 
-function buildTreeFromRoot(root: Ancestor, allAncestors: Ancestor[]) {
+function buildTreeFromRoot(_root: Ancestor, allAncestors: Ancestor[]) {
   const nodes: TreeNode[] = [];
   const connections: Connection[] = [];
   const nodeMap = new Map<string, TreeNode>();
 
   // Constants for layout
-  const NODE_WIDTH = 150;
-  const NODE_HEIGHT = 80;
   const GENERATION_HEIGHT = 180; // Spacing between generations
   const MIN_HORIZONTAL_SPACING = 200;
 

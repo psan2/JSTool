@@ -88,7 +88,6 @@ function familyTreeReducer(state: FamilyTreeState, action: FamilyTreeAction): Fa
 
     case 'DELETE_ANCESTOR':
       const deletedId = action.payload;
-      const deletedAncestor = state.data.ancestors.find(a => a.id === deletedId);
 
       // Remove the ancestor and clean up any references to it
       const remainingAncestors = state.data.ancestors

@@ -55,7 +55,7 @@ export class ErrorBoundary extends Component<Props, State> {
             We're sorry, but something unexpected happened. Please try refreshing the page.
           </p>
 
-          {import.meta.env.MODE === 'development' && this.state.error && (
+          {import.meta.env.DEV && this.state.error && (
             <details style={{ marginTop: '15px' }}>
               <summary style={{ cursor: 'pointer', color: '#7f8c8d' }}>
                 Error Details (Development)

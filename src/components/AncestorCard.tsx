@@ -31,10 +31,16 @@ const AncestorCard: React.FC<AncestorCardProps> = ({ ancestor, allAncestors, onE
   };
 
   const createParentDetails = (ancestor: Ancestor, allAncestors: Ancestor[]) => {
-    const parent1 = ancestor.parent1Id ? allAncestors.find(a => a.id === ancestor.parent1Id) : null;
-    const parent2 = ancestor.parent2Id ? allAncestors.find(a => a.id === ancestor.parent2Id) : null;
+    const parentIds = ancestor.parentIds || [];
+    if (parentIds.length === 0) {
+      return null;
+    }
 
-    if (!parent1 && !parent2) {
+    const parents = parentIds
+      .map(id => allAncestors.find(a => a.id === id))
+      .filter((p): p is Ancestor => p !== undefined);
+
+    if (parents.length === 0) {
       return null;
     }
 
@@ -47,16 +53,19 @@ const AncestorCard: React.FC<AncestorCardProps> = ({ ancestor, allAncestors, onE
     return (
       <div className="detail-group" key="parents">
         <h4>Parents</h4>
-        {parent1 && <div className="detail-item">Parent 1: {getParentName(parent1)}</div>}
-        {parent2 && <div className="detail-item">Parent 2: {getParentName(parent2)}</div>}
+        {parents.map((parent, index) => (
+          <div key={parent.id} className="detail-item">
+            Parent {index + 1}: {getParentName(parent)}
+          </div>
+        ))}
       </div>
     );
   };
 
   const createChildrenDetails = (ancestor: Ancestor, allAncestors: Ancestor[]) => {
-    // Find all children where this ancestor is parent1 or parent2
+    // Find all children where this ancestor is a parent
     const children = allAncestors.filter(a =>
-      a.parent1Id === ancestor.id || a.parent2Id === ancestor.id
+      a.parentIds?.includes(ancestor.id)
     );
 
     if (children.length === 0) {
