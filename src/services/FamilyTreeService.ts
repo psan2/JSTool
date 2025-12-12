@@ -5,18 +5,19 @@ export class FamilyTreeService {
   static inferRelationship(ancestor: Ancestor, allAncestors: Ancestor[], selfId: string): string {
     if (ancestor.id === selfId) return 'Self';
 
-    // Check if this person is a parent of self
     const selfAncestor = allAncestors.find(a => a.id === selfId);
+
+    // Check if this ancestor is a parent of self
     if (selfAncestor && (selfAncestor.parent1Id === ancestor.id || selfAncestor.parent2Id === ancestor.id)) {
       return 'Parent';
     }
 
-    // Check if this person is a child of self
+    // Check if this ancestor is a child of self
     if (ancestor.parent1Id === selfId || ancestor.parent2Id === selfId) {
       return 'Child';
     }
 
-    // Check if this person is a grandparent (parent of self's parent)
+    // Check if this ancestor is a grandparent (parent of self's parent)
     if (selfAncestor) {
       const parent1 = allAncestors.find(a => a.id === selfAncestor.parent1Id);
       const parent2 = allAncestors.find(a => a.id === selfAncestor.parent2Id);
@@ -27,7 +28,7 @@ export class FamilyTreeService {
       }
     }
 
-    // Check if this person is a grandchild (child of self's child)
+    // Check if this ancestor is a grandchild (child of self's child)
     const children = allAncestors.filter(a => a.parent1Id === selfId || a.parent2Id === selfId);
     for (const child of children) {
       if (ancestor.parent1Id === child.id || ancestor.parent2Id === child.id) {

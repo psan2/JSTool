@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { Ancestor } from "../types";
+import { FamilyTreeService } from "../services/FamilyTreeService";
 
 interface FamilyTreeGraphProps {
   ancestors: Ancestor[];
@@ -23,58 +24,6 @@ interface Connection {
   type: "parent" | "marriage";
 }
 
-// Helper function to infer relationship based on family tree position
-function inferRelationship(
-  ancestor: Ancestor,
-  allAncestors: Ancestor[],
-  selfId: string
-): string {
-  if (ancestor.id === selfId) return "Self";
-
-  // Check if this person is a parent of self
-  const selfAncestor = allAncestors.find((a) => a.id === selfId);
-  if (
-    selfAncestor &&
-    (selfAncestor.parent1Id === ancestor.id ||
-      selfAncestor.parent2Id === ancestor.id)
-  ) {
-    return "Parent";
-  }
-
-  // Check if this person is a child of self
-  if (ancestor.parent1Id === selfId || ancestor.parent2Id === selfId) {
-    return "Child";
-  }
-
-  // Check if this person is a grandparent (parent of self's parent)
-  if (selfAncestor) {
-    const parent1 = allAncestors.find((a) => a.id === selfAncestor.parent1Id);
-    const parent2 = allAncestors.find((a) => a.id === selfAncestor.parent2Id);
-
-    if (
-      (parent1 &&
-        (parent1.parent1Id === ancestor.id ||
-          parent1.parent2Id === ancestor.id)) ||
-      (parent2 &&
-        (parent2.parent1Id === ancestor.id ||
-          parent2.parent2Id === ancestor.id))
-    ) {
-      return "Grandparent";
-    }
-  }
-
-  // Check if this person is a grandchild (child of self's child)
-  const children = allAncestors.filter(
-    (a) => a.parent1Id === selfId || a.parent2Id === selfId
-  );
-  for (const child of children) {
-    if (ancestor.parent1Id === child.id || ancestor.parent2Id === child.id) {
-      return "Grandchild";
-    }
-  }
-
-  return "Relative";
-}
 
 const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
   ancestors,
@@ -114,7 +63,7 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
     // Only show relationship if no name is provided
     const selfPerson =
       ancestors.find((a) => !a.parent1Id && !a.parent2Id) || ancestors[0];
-    const relationship = inferRelationship(ancestor, ancestors, selfPerson.id);
+    const relationship = FamilyTreeService.inferRelationship(ancestor, ancestors, selfPerson.id);
     return relationship;
   };
 
@@ -489,7 +438,7 @@ function buildTreeFromRoot(root: Ancestor, allAncestors: Ancestor[]) {
       }
 
       const y = currentY - generation * GENERATION_HEIGHT;
-      const relationship = inferRelationship(ancestor, allAncestors, root.id);
+      const relationship = FamilyTreeService.inferRelationship(ancestor, allAncestors, root.id);
 
       const node: TreeNode = {
         ancestor,
