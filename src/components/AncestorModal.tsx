@@ -3,6 +3,9 @@ import { Ancestor, LocationEvent } from "../types";
 import EventEntry from "./EventEntry";
 import Modal from "./Modal";
 import CountryAutocomplete from "./CountryAutocomplete";
+import DateInputGroup from "./DateInputGroup";
+import { createLocationEvent } from "../utils/locationUtils";
+import { getDisplayName as getAncestorDisplayName } from "../utils/relationshipUtils";
 
 interface AncestorModalProps {
   ancestor: Ancestor | null;
@@ -96,72 +99,6 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
     }
   }, [ancestor, availablePartners]);
 
-  const validateDateField = (
-    field: string,
-    value: string,
-    currentValue: string
-  ): string => {
-    if (!value) return "";
-
-    switch (field) {
-      case "year":
-        const yearStr = value.toString();
-        const yearNum = parseInt(yearStr);
-
-        // If it's a valid 4-digit year, return it as-is
-        if (yearStr.length === 4 && yearNum >= 1800 && yearNum <= 2024) {
-          return yearStr;
-        }
-
-        // If it's a partial year being typed, allow it
-        if (yearStr.length < 4 && yearNum > 0) {
-          return yearStr;
-        }
-
-        // If it's invalid, keep the previous value
-        return currentValue;
-      case "month":
-        const monthNum = parseInt(value);
-        if (monthNum < 1 || monthNum > 12) return currentValue;
-        return monthNum.toString();
-      case "day":
-        const dayNum = parseInt(value);
-        if (dayNum < 1 || dayNum > 31) return currentValue;
-        return dayNum.toString();
-      default:
-        return value;
-    }
-  };
-
-  const createLocationEvent = (
-    year: string,
-    month: string,
-    day: string,
-    country: string
-  ): LocationEvent | undefined => {
-    const hasDate = year || month || day;
-    const hasCountry = country && country.trim();
-
-    if (!hasDate && !hasCountry) {
-      return undefined;
-    }
-
-    const event: LocationEvent = {};
-
-    if (hasDate) {
-      const date: any = {};
-      if (year) date.year = parseInt(year);
-      if (month) date.month = parseInt(month);
-      if (day) date.day = parseInt(day);
-      event.date = date;
-    }
-
-    if (hasCountry) {
-      event.country = country.trim();
-    }
-
-    return event;
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -274,29 +211,9 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
     }
   }, []);
 
-  // Helper function to get display name for dropdowns
+  // Use the utility function for display names
   const getDisplayName = (person: Ancestor): string => {
-    if (person.firstName || person.lastName) {
-      return `${person.firstName || ''} ${person.lastName || ''}`.trim();
-    }
-
-    // Find self to infer relationship
-    const selfPerson = availablePartners.find(a => !a.parentIds || a.parentIds.length === 0) || availablePartners[0];
-    if (selfPerson) {
-      if (person.id === selfPerson.id) return 'Self';
-
-      // Check if this person is a parent of self
-      if (selfPerson.parentIds?.includes(person.id)) {
-        return 'Parent';
-      }
-
-      // Check if this person is a child of self
-      if (person.parentIds?.includes(selfPerson.id)) {
-        return 'Child';
-      }
-    }
-
-    return 'Relative';
+    return getAncestorDisplayName(person);
   };
 
   return (
@@ -375,48 +292,14 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
 
         <fieldset className="fieldset">
           <legend>Birth Information</legend>
-          <div className="date-input-group">
-            <label>Year:</label>
-            <input
-              type="number"
-              value={birthYear}
-              onChange={(e) =>
-                setBirthYear(
-                  validateDateField("year", e.target.value, birthYear)
-                )
-              }
-              min="1800"
-              max="2024"
-              placeholder="YYYY"
-              maxLength={4}
-            />
-            <label>Month:</label>
-            <input
-              type="number"
-              value={birthMonth}
-              onChange={(e) =>
-                setBirthMonth(
-                  validateDateField("month", e.target.value, birthMonth)
-                )
-              }
-              min="1"
-              max="12"
-              placeholder="MM"
-              maxLength={2}
-            />
-            <label>Day:</label>
-            <input
-              type="number"
-              value={birthDay}
-              onChange={(e) =>
-                setBirthDay(validateDateField("day", e.target.value, birthDay))
-              }
-              min="1"
-              max="31"
-              placeholder="DD"
-              maxLength={2}
-            />
-          </div>
+          <DateInputGroup
+            year={birthYear}
+            month={birthMonth}
+            day={birthDay}
+            onYearChange={setBirthYear}
+            onMonthChange={setBirthMonth}
+            onDayChange={setBirthDay}
+          />
           <div className="form-group">
             <label>Country:</label>
             <CountryAutocomplete
@@ -508,50 +391,14 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
         {!isAlive && (
           <fieldset className="fieldset">
             <legend>Death Information</legend>
-            <div className="date-input-group">
-              <label>Year:</label>
-              <input
-                type="number"
-                value={deathYear}
-                onChange={(e) =>
-                  setDeathYear(
-                    validateDateField("year", e.target.value, deathYear)
-                  )
-                }
-                min="1800"
-                max="2024"
-                placeholder="YYYY"
-                maxLength={4}
-              />
-              <label>Month:</label>
-              <input
-                type="number"
-                value={deathMonth}
-                onChange={(e) =>
-                  setDeathMonth(
-                    validateDateField("month", e.target.value, deathMonth)
-                  )
-                }
-                min="1"
-                max="12"
-                placeholder="MM"
-                maxLength={2}
-              />
-              <label>Day:</label>
-              <input
-                type="number"
-                value={deathDay}
-                onChange={(e) =>
-                  setDeathDay(
-                    validateDateField("day", e.target.value, deathDay)
-                  )
-                }
-                min="1"
-                max="31"
-                placeholder="DD"
-                maxLength={2}
-              />
-            </div>
+            <DateInputGroup
+              year={deathYear}
+              month={deathMonth}
+              day={deathDay}
+              onYearChange={setDeathYear}
+              onMonthChange={setDeathMonth}
+              onDayChange={setDeathDay}
+            />
             <div className="form-group">
               <label>Country:</label>
               <CountryAutocomplete
