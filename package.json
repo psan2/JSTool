@@ -1,6 +1,7 @@
 {
   "name": "family-history-citizenship-tool",
   "version": "2.0.0",
+  "type": "module",
   "description": "A React-based tool to help users input family history to determine citizenship eligibility",
   "main": "src/index.tsx",
   "scripts": {
