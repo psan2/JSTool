@@ -23,7 +23,6 @@ interface Connection {
   type: "parent" | "marriage";
 }
 
-
 const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
   ancestors,
   onEditAncestor,
@@ -31,6 +30,55 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
   onAddParent,
   onAddChild,
 }) => {
+  const [zoom, setZoom] = React.useState(1);
+  const [pan, setPan] = React.useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = React.useState(false);
+  const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 });
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.2, 3));
+  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.2, 0.5));
+  const handleResetZoom = () => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  };
+
+  // Use native event listener for wheel to allow preventDefault
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // Only handle if mouse is over the container
+      if (e.target === container || container.contains(e.target as Node)) {
+        e.preventDefault();
+        e.stopPropagation();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        setZoom(prev => Math.max(0.5, Math.min(3, prev + delta)));
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
+  }, []);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    setPan({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
   const { nodes, connections, dimensions } = useMemo(() => {
     if (ancestors.length === 0) {
       return {
@@ -42,12 +90,17 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
 
     // Find the root of the tree - the person with no parents
     // If multiple people have no parents, use the oldest by createdAt
-    const rootCandidates = ancestors.filter(a => !a.parentIds || a.parentIds.length === 0);
-    const selfPerson = rootCandidates.length > 0
-      ? rootCandidates.reduce((oldest, current) =>
-          current.createdAt < oldest.createdAt ? current : oldest
-        , rootCandidates[0])
-      : ancestors[0]; // Fallback to first ancestor if no root found
+    const rootCandidates = ancestors.filter(
+      (a) => !a.parentIds || a.parentIds.length === 0
+    );
+    const selfPerson =
+      rootCandidates.length > 0
+        ? rootCandidates.reduce(
+            (oldest, current) =>
+              current.createdAt < oldest.createdAt ? current : oldest,
+            rootCandidates[0]
+          )
+        : ancestors[0]; // Fallback to first ancestor if no root found
 
     return buildTreeFromRoot(selfPerson, ancestors);
   }, [ancestors]);
@@ -80,7 +133,8 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
 
   // Check if we only have a blank Self ancestor (new user experience)
   const selfPerson =
-    ancestors.find((a) => !a.parentIds || a.parentIds.length === 0) || ancestors[0];
+    ancestors.find((a) => !a.parentIds || a.parentIds.length === 0) ||
+    ancestors[0];
   const isNewUser =
     ancestors.length === 1 &&
     !selfPerson.firstName &&
@@ -111,13 +165,108 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
           </p>
         </div>
       )}
-      <div className="family-tree-graph">
-        <svg
-          width={dimensions.width}
-          height={dimensions.height}
-          style={{ border: "1px solid #ddd", borderRadius: "8px" }}
+      <div style={{ position: "relative" }}>
+        <div style={{
+          position: "absolute",
+          top: "10px",
+          right: "10px",
+          display: "flex",
+          gap: "5px",
+          zIndex: 10
+        }}>
+          <button
+            onClick={handleZoomIn}
+            style={{
+              padding: "8px 12px",
+              background: "#3498db",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer"
+            }}
+            title="Zoom In"
+          >
+            +
+          </button>
+          <button
+            onClick={handleZoomOut}
+            style={{
+              padding: "8px 12px",
+              background: "#3498db",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer"
+            }}
+            title="Zoom Out"
+          >
+            −
+          </button>
+          <button
+            onClick={handleResetZoom}
+            style={{
+              padding: "8px 12px",
+              background: "#95a5a6",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer"
+            }}
+            title="Reset Zoom"
+          >
+            ⟲
+          </button>
+        </div>
+        <div
+          ref={containerRef}
+          className="family-tree-graph"
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          style={{
+            cursor: isDragging ? 'grabbing' : 'grab'
+          }}
         >
-          {/* Render connections first (behind nodes) */}
+          <svg
+            viewBox={`${-pan.x / zoom} ${-pan.y / zoom} ${dimensions.width / zoom} ${dimensions.height / zoom}`}
+            style={{
+              border: "1px solid #ddd",
+              borderRadius: "8px",
+              width: "100%",
+              height: "auto",
+              maxHeight: "80vh",
+              pointerEvents: "none"
+            }}
+          >
+          {/* Render generation gridlines */}
+          {Array.from(new Set(nodes.map((n) => n.generation))).map((gen) => {
+            const y = nodes.find((n) => n.generation === gen)?.y || 0;
+            return (
+              <g key={`gen-${gen}`}>
+                <line
+                  x1={0}
+                  y1={y + 40}
+                  x2={dimensions.width}
+                  y2={y + 40}
+                  stroke="#e0e0e0"
+                  strokeWidth="1"
+                  strokeDasharray="5,5"
+                />
+                <text
+                  x={10}
+                  y={y + 35}
+                  fontSize="10"
+                  fill="#999"
+                  style={{ userSelect: "none" }}
+                >
+                  Gen {gen}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Render connections (behind nodes) */}
           {connections.map((connection, index) => (
             <g key={`connection-${index}`}>
               {connection.type === "parent" ? (
@@ -164,7 +313,7 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
                     onAddParent(node.ancestor.id);
                   }}
                   onKeyPress={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
+                    if (e.key === "Enter" || e.key === " ") {
                       e.stopPropagation();
                       onAddParent(node.ancestor.id);
                     }
@@ -214,19 +363,24 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
                   {displayName}
                 </text>
 
-                {/* Birth year */}
-                {node.ancestor.birth?.date?.year && (
-                  <text
-                    x={node.x}
-                    y={node.y + 8}
-                    textAnchor="middle"
-                    fontSize="11"
-                    fill="#7f8c8d"
-                    style={{ userSelect: "none" }}
-                  >
-                    b. {node.ancestor.birth.date.year}
-                  </text>
-                )}
+                {/* Additional info line */}
+                <text
+                  x={node.x}
+                  y={node.y + 8}
+                  textAnchor="middle"
+                  fontSize="11"
+                  fill="#7f8c8d"
+                  style={{ userSelect: "none" }}
+                >
+                  {node.ancestor.birth?.date?.year &&
+                    `b. ${node.ancestor.birth.date.year}`}
+                  {node.ancestor.marriages &&
+                    node.ancestor.marriages.length > 0 &&
+                    ` m. ${node.ancestor.marriages.length}`}
+                  {node.ancestor.naturalizations &&
+                    node.ancestor.naturalizations.length > 0 &&
+                    ` n. ${node.ancestor.naturalizations.length}`}
+                </text>
 
                 {/* Edit button */}
                 <g
@@ -239,7 +393,7 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
                     onEditAncestor(node.ancestor);
                   }}
                   onKeyPress={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
+                    if (e.key === "Enter" || e.key === " ") {
                       e.stopPropagation();
                       onEditAncestor(node.ancestor);
                     }
@@ -275,7 +429,7 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
                     onDeleteAncestor(node.ancestor.id);
                   }}
                   onKeyPress={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
+                    if (e.key === "Enter" || e.key === " ") {
                       e.stopPropagation();
                       onDeleteAncestor(node.ancestor.id);
                     }
@@ -311,7 +465,7 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
                     onAddChild(node.ancestor.id);
                   }}
                   onKeyPress={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
+                    if (e.key === "Enter" || e.key === " ") {
                       e.stopPropagation();
                       onAddChild(node.ancestor.id);
                     }
@@ -338,7 +492,8 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
               </g>
             );
           })}
-        </svg>
+          </svg>
+        </div>
       </div>
     </div>
   );
@@ -350,13 +505,15 @@ function buildTreeFromRoot(_root: Ancestor, allAncestors: Ancestor[]) {
   const nodeMap = new Map<string, TreeNode>();
 
   // Constants for layout
-  const GENERATION_HEIGHT = 180; // Spacing between generations
+  const GENERATION_HEIGHT = 180;
   const MIN_HORIZONTAL_SPACING = 200;
+  const NODE_HEIGHT = 80;
+  const BUTTON_SPACE = 50; // Space for buttons above/below nodes
+  const PADDING = 100; // Canvas padding
 
-  // Group ancestors by their stored generation
+  // Group ancestors by generation
   const generations = new Map<number, Ancestor[]>();
-
-  allAncestors.forEach(ancestor => {
+  allAncestors.forEach((ancestor) => {
     const gen = ancestor.generation;
     if (!generations.has(gen)) {
       generations.set(gen, []);
@@ -364,52 +521,32 @@ function buildTreeFromRoot(_root: Ancestor, allAncestors: Ancestor[]) {
     generations.get(gen)!.push(ancestor);
   });
 
-  // Calculate positions
-  let maxWidth = 0;
-
-  // Process generations from bottom (0) to top
   const sortedGenerations = Array.from(generations.entries()).sort(
     (a, b) => a[0] - b[0]
   );
 
-  // Calculate the maximum number of nodes in any generation for consistent spacing
-  const maxNodesInGeneration = Math.max(
-    ...Array.from(generations.values()).map((gen) => gen.length)
-  );
-  const totalTreeWidth = maxNodesInGeneration * MIN_HORIZONTAL_SPACING;
-  maxWidth = Math.max(maxWidth, totalTreeWidth);
-
-  // Calculate total height needed and start from appropriate Y position
   const maxGeneration = Math.max(...Array.from(generations.keys()));
   const minGeneration = Math.min(...Array.from(generations.keys()));
-  const totalGenerations = maxGeneration - minGeneration + 1;
 
-  // Add padding at top and bottom
-  const TOP_PADDING = 100;
-  const BOTTOM_PADDING = 100;
-
-  // Calculate Y position for generation 0 (Self)
-  // Self should be positioned so that all ancestors fit above with padding
-  const selfY = TOP_PADDING + maxGeneration * GENERATION_HEIGHT;
+  // Position nodes - use a generous base Y to ensure top button always has room
+  // Start far enough down to accommodate the parent button above the highest generation
+  const BASE_Y = 200; // Fixed generous starting position
 
   sortedGenerations.forEach(([generation, ancestorsInGen]) => {
-    // Calculate positions for all nodes in this generation
-    // ensuring proper spacing between all nodes
-    const genWidth = ancestorsInGen.length * MIN_HORIZONTAL_SPACING;
-    const startX = (totalTreeWidth - genWidth) / 2;
-
     ancestorsInGen.forEach((ancestor, index) => {
-      // Position nodes sequentially across the generation
-      const x = startX + index * MIN_HORIZONTAL_SPACING + MIN_HORIZONTAL_SPACING / 2;
-      const y = selfY - generation * GENERATION_HEIGHT;
+      // Center this generation's nodes
+      const x = PADDING + (index + 0.5) * MIN_HORIZONTAL_SPACING;
+      // Position based on generation offset from maximum
+      // Higher generations (ancestors) get LOWER y values (appear higher on screen)
+      const generationOffset = maxGeneration - generation;
+      const y = BASE_Y + generationOffset * GENERATION_HEIGHT;
 
-      // Use the stored generation value
       const node: TreeNode = {
         ancestor,
         x,
         y,
-        generation: ancestor.generation, // Use stored generation
-        relationship: ancestor.firstName || "Person", // Use stored name
+        generation: ancestor.generation,
+        relationship: ancestor.firstName || "Person",
       };
 
       nodes.push(node);
@@ -417,31 +554,20 @@ function buildTreeFromRoot(_root: Ancestor, allAncestors: Ancestor[]) {
     });
   });
 
-  // Center all nodes horizontally within the canvas
-  const totalWidth = maxWidth + 200; // Add padding
-  const offsetX = totalWidth / 2 - maxWidth / 2;
-
-  nodes.forEach((node) => {
-    node.x += offsetX;
-  });
-
   // Create connections
   nodes.forEach((node) => {
-    // Parent connections
     const parentIds = node.ancestor.parentIds || [];
-    parentIds.forEach(parentId => {
+    parentIds.forEach((parentId) => {
       const parent = nodeMap.get(parentId);
       if (parent) {
         connections.push({ from: parent, to: node, type: "parent" });
       }
     });
 
-    // Marriage connections
     node.ancestor.marriages?.forEach((marriage) => {
       if (marriage.partnerId) {
         const spouse = nodeMap.get(marriage.partnerId);
         if (spouse && spouse.generation === node.generation) {
-          // Only add marriage line if we haven't already added it from the other direction
           const existingConnection = connections.find(
             (c) =>
               c.type === "marriage" &&
@@ -459,9 +585,25 @@ function buildTreeFromRoot(_root: Ancestor, allAncestors: Ancestor[]) {
     });
   });
 
+  // Calculate canvas dimensions based on ACTUAL element positions
+  const maxNodesInGen = Math.max(
+    ...Array.from(generations.values()).map((gen) => gen.length)
+  );
+
+  // Find the actual min and max Y positions of nodes
+  const minNodeY = Math.min(...nodes.map(n => n.y));
+  const maxNodeY = Math.max(...nodes.map(n => n.y));
+
+  // Calculate the actual top and bottom bounds including buttons
+  // Top button is at: minNodeY - NODE_HEIGHT/2 - 25 - 12 (button radius)
+  const topBound = minNodeY - NODE_HEIGHT / 2 - 25 - 12;
+  // Bottom button is at: maxNodeY + NODE_HEIGHT/2 + 25 + 12 (button radius)
+  const bottomBound = maxNodeY + NODE_HEIGHT / 2 + 25 + 12;
+
   const dimensions = {
-    width: Math.max(maxWidth + 200, 800),
-    height: Math.max(totalGenerations * GENERATION_HEIGHT + TOP_PADDING + BOTTOM_PADDING, 500),
+    width: maxNodesInGen * MIN_HORIZONTAL_SPACING + 2 * PADDING,
+    // Height is the actual range of elements plus padding
+    height: bottomBound - topBound + 2 * PADDING,
   };
 
   return { nodes, connections, dimensions };

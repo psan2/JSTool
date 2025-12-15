@@ -6,6 +6,10 @@ import CountryAutocomplete from "./CountryAutocomplete";
 import DateInputGroup from "./DateInputGroup";
 import { createLocationEvent } from "../utils/locationUtils";
 import { getDisplayName as getAncestorDisplayName } from "../utils/relationshipUtils";
+import {
+  getEligibleParents as getEligibleParentsUtil,
+  getEligibleChildren as getEligibleChildrenUtil,
+} from "../utils/ancestorFilterUtils";
 
 interface AncestorModalProps {
   ancestor: Ancestor | null;
@@ -174,34 +178,20 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
     setNaturalizations((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
+  const getEligibleParents = useCallback(() => {
+    return getEligibleParentsUtil(ancestor, availablePartners, selectedChildrenIds);
+  }, [ancestor, availablePartners, selectedChildrenIds]);
+
   const getEligibleChildren = useCallback(() => {
-    if (!availablePartners || availablePartners.length === 0) return [];
-
-    const currentAncestorBirthYear = ancestor?.birth?.date?.year || (birthYear ? parseInt(birthYear) : null);
-
-    return availablePartners.filter(potentialChild => {
-      // Can't be a child of themselves
-      if (potentialChild.id === ancestor?.id) return false;
-
-      // Can't be a current or former spouse
-      const isCurrentSpouse = marriages.some(marriage => marriage.partnerId === potentialChild.id);
-      const isFormerSpouse = divorces.some(divorce => divorce.partnerId === potentialChild.id);
-
-      if (isCurrentSpouse || isFormerSpouse) {
-        return false; // Exclude spouses from potential children
-      }
-
-      // Birth date validation - parents must be older than children
-      const childBirthYear = potentialChild.birth?.date?.year;
-      if (currentAncestorBirthYear && childBirthYear) {
-        if (childBirthYear <= currentAncestorBirthYear) {
-          return false; // Child was born before or same year as potential parent
-        }
-      }
-
-      return true;
-    });
-  }, [availablePartners, ancestor, birthYear, marriages, divorces]);
+    return getEligibleChildrenUtil(
+      ancestor,
+      availablePartners,
+      selectedParentIds,
+      marriages,
+      divorces,
+      birthYear
+    );
+  }, [ancestor, availablePartners, selectedParentIds, marriages, divorces, birthYear]);
 
   const handleChildToggle = useCallback((childId: string, isSelected: boolean) => {
     if (isSelected) {
@@ -246,12 +236,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
 
         <fieldset className="fieldset">
           <legend>Parents</legend>
-          {availablePartners
-            .filter((partner) =>
-              partner.id !== ancestor?.id &&
-              !selectedChildrenIds.includes(partner.id) // Exclude selected children
-            )
-            .map((partner) => {
+          {getEligibleParents().map((partner) => {
               const displayName = getDisplayName(partner);
               const isSelected = selectedParentIds.includes(partner.id);
 
@@ -278,10 +263,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
                 </div>
               );
             })}
-          {availablePartners.filter((partner) =>
-            partner.id !== ancestor?.id &&
-            !selectedChildrenIds.includes(partner.id)
-          ).length === 0 && (
+          {getEligibleParents().length === 0 && (
             <div className="form-group">
               <p style={{ fontStyle: 'italic', color: '#666' }}>
                 No eligible parents available.
@@ -412,11 +394,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
 
         <fieldset className="fieldset">
           <legend>Children</legend>
-          {getEligibleChildren()
-            .filter(child =>
-              !selectedParentIds.includes(child.id) // Exclude selected parents
-            )
-            .map(child => {
+          {getEligibleChildren().map(child => {
               const isSelected = selectedChildrenIds.includes(child.id);
               const displayName = getDisplayName(child);
 
@@ -435,9 +413,7 @@ const AncestorModal: React.FC<AncestorModalProps> = ({
                 </div>
               );
             })}
-          {getEligibleChildren().filter(child =>
-            !selectedParentIds.includes(child.id)
-          ).length === 0 && (
+          {getEligibleChildren().length === 0 && (
             <div className="form-group">
               <p style={{ fontStyle: 'italic', color: '#666' }}>
                 No eligible children available. Parents must be older than their children and cannot be current or former spouses.

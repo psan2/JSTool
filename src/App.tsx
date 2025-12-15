@@ -75,6 +75,16 @@ function App() {
     }
   };
 
+  const handleCopyJson = async () => {
+    try {
+      const jsonData = storage.exportData();
+      await navigator.clipboard.writeText(jsonData);
+      showNotification("JSON data copied to clipboard!", "success");
+    } catch {
+      showNotification("Failed to copy JSON to clipboard.", "error");
+    }
+  };
+
   return (
     <ErrorBoundary>
       <div className="container">
@@ -82,7 +92,10 @@ function App() {
 
         <Controls
           onAddAncestor={ancestorHandlers.handleAddAncestor}
-          onImportExport={() => setIsImportExportModalOpen(true)}
+          onImport={() => setIsImportExportModalOpen(true)}
+          onExportUrl={handleCopyUrl}
+          onExportBase64={handleCopyData}
+          onExportJson={handleCopyJson}
           onClearAll={handleClearAll}
         />
 

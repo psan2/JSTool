@@ -42,7 +42,6 @@ const DateInputGroup: React.FC<DateInputGroupProps> = ({
         min="1"
         max="12"
         placeholder="MM"
-        maxLength={2}
       />
       <label>Day:</label>
       <input
@@ -54,7 +53,6 @@ const DateInputGroup: React.FC<DateInputGroupProps> = ({
         min="1"
         max="31"
         placeholder="DD"
-        maxLength={2}
       />
     </div>
   );
