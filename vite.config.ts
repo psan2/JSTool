@@ -10,6 +10,8 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true
+    sourcemap: false, // Disable source maps in production
+    minify: 'esbuild', // Explicitly enable minification (default)
+    target: 'es2015' // Ensure broad browser compatibility
   }
 })
