@@ -36,8 +36,8 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
   const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 });
   const containerRef = React.useRef<HTMLDivElement>(null);
 
-  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.2, 3));
-  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.2, 0.5));
+  const handleZoomIn = () => setZoom((prev) => Math.min(prev + 0.2, 3));
+  const handleZoomOut = () => setZoom((prev) => Math.max(prev - 0.2, 0.5));
   const handleResetZoom = () => {
     setZoom(1);
     setPan({ x: 0, y: 0 });
@@ -54,12 +54,12 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
         e.preventDefault();
         e.stopPropagation();
         const delta = e.deltaY > 0 ? -0.1 : 0.1;
-        setZoom(prev => Math.max(0.5, Math.min(3, prev + delta)));
+        setZoom((prev) => Math.max(0.5, Math.min(3, prev + delta)));
       }
     };
 
-    container.addEventListener('wheel', handleWheel, { passive: false });
-    return () => container.removeEventListener('wheel', handleWheel);
+    container.addEventListener("wheel", handleWheel, { passive: false });
+    return () => container.removeEventListener("wheel", handleWheel);
   }, []);
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -71,7 +71,7 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
     if (!isDragging) return;
     setPan({
       x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y
+      y: e.clientY - dragStart.y,
     });
   };
 
@@ -166,14 +166,16 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
         </div>
       )}
       <div style={{ position: "relative" }}>
-        <div style={{
-          position: "absolute",
-          top: "10px",
-          right: "10px",
-          display: "flex",
-          gap: "5px",
-          zIndex: 10
-        }}>
+        <div
+          style={{
+            position: "absolute",
+            top: "10px",
+            right: "10px",
+            display: "flex",
+            gap: "5px",
+            zIndex: 10,
+          }}
+        >
           <button
             onClick={handleZoomIn}
             style={{
@@ -182,7 +184,7 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
               color: "white",
               border: "none",
               borderRadius: "4px",
-              cursor: "pointer"
+              cursor: "pointer",
             }}
             title="Zoom In"
           >
@@ -196,7 +198,7 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
               color: "white",
               border: "none",
               borderRadius: "4px",
-              cursor: "pointer"
+              cursor: "pointer",
             }}
             title="Zoom Out"
           >
@@ -210,7 +212,7 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
               color: "white",
               border: "none",
               borderRadius: "4px",
-              cursor: "pointer"
+              cursor: "pointer",
             }}
             title="Reset Zoom"
           >
@@ -225,273 +227,275 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
           style={{
-            cursor: isDragging ? 'grabbing' : 'grab'
+            cursor: isDragging ? "grabbing" : "grab",
           }}
         >
           <svg
-            viewBox={`${-pan.x / zoom} ${-pan.y / zoom} ${dimensions.width / zoom} ${dimensions.height / zoom}`}
+            viewBox={`${-pan.x / zoom} ${-pan.y / zoom} ${
+              dimensions.width / zoom
+            } ${dimensions.height / zoom}`}
             style={{
               border: "1px solid #ddd",
               borderRadius: "8px",
               width: "100%",
               height: "auto",
               maxHeight: "80vh",
-              pointerEvents: "none"
+              pointerEvents: "none",
             }}
           >
-          {/* Render generation gridlines */}
-          {Array.from(new Set(nodes.map((n) => n.generation))).map((gen) => {
-            const y = nodes.find((n) => n.generation === gen)?.y || 0;
-            return (
-              <g key={`gen-${gen}`}>
-                <line
-                  x1={0}
-                  y1={y + 40}
-                  x2={dimensions.width}
-                  y2={y + 40}
-                  stroke="#e0e0e0"
-                  strokeWidth="1"
-                  strokeDasharray="5,5"
-                />
-                <text
-                  x={10}
-                  y={y + 35}
-                  fontSize="10"
-                  fill="#999"
-                  style={{ userSelect: "none" }}
-                >
-                  Gen {gen}
-                </text>
+            {/* Render generation gridlines */}
+            {Array.from(new Set(nodes.map((n) => n.generation))).map((gen) => {
+              const y = nodes.find((n) => n.generation === gen)?.y || 0;
+              return (
+                <g key={`gen-${gen}`}>
+                  <line
+                    x1={0}
+                    y1={y + 40}
+                    x2={dimensions.width}
+                    y2={y + 40}
+                    stroke="#e0e0e0"
+                    strokeWidth="1"
+                    strokeDasharray="5,5"
+                  />
+                  <text
+                    x={10}
+                    y={y + 35}
+                    fontSize="10"
+                    fill="#999"
+                    style={{ userSelect: "none" }}
+                  >
+                    Gen {gen}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* Render connections (behind nodes) */}
+            {connections.map((connection, index) => (
+              <g key={`connection-${index}`}>
+                {connection.type === "parent" ? (
+                  // Parent-child line (vertical)
+                  <line
+                    x1={connection.from.x}
+                    y1={connection.from.y}
+                    x2={connection.to.x}
+                    y2={connection.to.y}
+                    stroke="#3498db"
+                    strokeWidth="2"
+                  />
+                ) : (
+                  // Marriage line (horizontal)
+                  <line
+                    x1={connection.from.x}
+                    y1={connection.from.y}
+                    x2={connection.to.x}
+                    y2={connection.to.y}
+                    stroke="#e74c3c"
+                    strokeWidth="2"
+                    strokeDasharray="5,5"
+                  />
+                )}
               </g>
-            );
-          })}
+            ))}
 
-          {/* Render connections (behind nodes) */}
-          {connections.map((connection, index) => (
-            <g key={`connection-${index}`}>
-              {connection.type === "parent" ? (
-                // Parent-child line (vertical)
-                <line
-                  x1={connection.from.x}
-                  y1={connection.from.y}
-                  x2={connection.to.x}
-                  y2={connection.to.y}
-                  stroke="#3498db"
-                  strokeWidth="2"
-                />
-              ) : (
-                // Marriage line (horizontal)
-                <line
-                  x1={connection.from.x}
-                  y1={connection.from.y}
-                  x2={connection.to.x}
-                  y2={connection.to.y}
-                  stroke="#e74c3c"
-                  strokeWidth="2"
-                  strokeDasharray="5,5"
-                />
-              )}
-            </g>
-          ))}
+            {/* Render nodes */}
+            {nodes.map((node) => {
+              const displayName = getDisplayName(node.ancestor);
+              const nodeWidth = Math.max(displayName.length * 8 + 40, 140);
+              const nodeHeight = 80;
 
-          {/* Render nodes */}
-          {nodes.map((node) => {
-            const displayName = getDisplayName(node.ancestor);
-            const nodeWidth = Math.max(displayName.length * 8 + 40, 140);
-            const nodeHeight = 80;
-
-            return (
-              <g key={node.ancestor.id}>
-                {/* Add Parent button (above node) */}
-                <g
-                  role="button"
-                  aria-label={`Add parent to ${displayName}`}
-                  tabIndex={0}
-                  style={{ cursor: "pointer" }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAddParent(node.ancestor.id);
-                  }}
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
+              return (
+                <g key={node.ancestor.id}>
+                  {/* Add Parent button (above node) */}
+                  <g
+                    role="button"
+                    aria-label={`Add parent to ${displayName}`}
+                    tabIndex={0}
+                    style={{ cursor: "pointer" }}
+                    onClick={(e) => {
                       e.stopPropagation();
                       onAddParent(node.ancestor.id);
-                    }
-                  }}
-                >
-                  <title>Add parent to {displayName}</title>
-                  <circle
-                    cx={node.x}
-                    cy={node.y - nodeHeight / 2 - 25}
-                    r="12"
-                    fill="#27ae60"
+                    }}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.stopPropagation();
+                        onAddParent(node.ancestor.id);
+                      }
+                    }}
+                  >
+                    <title>Add parent to {displayName}</title>
+                    <circle
+                      cx={node.x}
+                      cy={node.y - nodeHeight / 2 - 25}
+                      r="12"
+                      fill="#27ae60"
+                    />
+                    <text
+                      x={node.x}
+                      y={node.y - nodeHeight / 2 - 21}
+                      textAnchor="middle"
+                      fontSize="16"
+                      fill="white"
+                      style={{ userSelect: "none" }}
+                    >
+                      +
+                    </text>
+                  </g>
+
+                  {/* Node background */}
+                  <rect
+                    x={node.x - nodeWidth / 2}
+                    y={node.y - nodeHeight / 2}
+                    width={nodeWidth}
+                    height={nodeHeight}
+                    fill="#f8f9fa"
+                    stroke="#3498db"
+                    strokeWidth="2"
+                    rx="8"
                   />
+
+                  {/* Node text */}
                   <text
                     x={node.x}
-                    y={node.y - nodeHeight / 2 - 21}
+                    y={node.y - 10}
                     textAnchor="middle"
-                    fontSize="16"
-                    fill="white"
+                    fontSize="14"
+                    fontWeight="bold"
+                    fill="#2c3e50"
                     style={{ userSelect: "none" }}
                   >
-                    +
+                    {displayName}
                   </text>
-                </g>
 
-                {/* Node background */}
-                <rect
-                  x={node.x - nodeWidth / 2}
-                  y={node.y - nodeHeight / 2}
-                  width={nodeWidth}
-                  height={nodeHeight}
-                  fill="#f8f9fa"
-                  stroke="#3498db"
-                  strokeWidth="2"
-                  rx="8"
-                />
+                  {/* Additional info line */}
+                  <text
+                    x={node.x}
+                    y={node.y + 8}
+                    textAnchor="middle"
+                    fontSize="11"
+                    fill="#7f8c8d"
+                    style={{ userSelect: "none" }}
+                  >
+                    {node.ancestor.birth?.date?.year &&
+                      `b. ${node.ancestor.birth.date.year}`}
+                    {node.ancestor.marriages &&
+                      node.ancestor.marriages.length > 0 &&
+                      ` m. ${node.ancestor.marriages.length}`}
+                    {node.ancestor.naturalizations &&
+                      node.ancestor.naturalizations.length > 0 &&
+                      ` n. ${node.ancestor.naturalizations.length}`}
+                  </text>
 
-                {/* Node text */}
-                <text
-                  x={node.x}
-                  y={node.y - 10}
-                  textAnchor="middle"
-                  fontSize="14"
-                  fontWeight="bold"
-                  fill="#2c3e50"
-                  style={{ userSelect: "none" }}
-                >
-                  {displayName}
-                </text>
-
-                {/* Additional info line */}
-                <text
-                  x={node.x}
-                  y={node.y + 8}
-                  textAnchor="middle"
-                  fontSize="11"
-                  fill="#7f8c8d"
-                  style={{ userSelect: "none" }}
-                >
-                  {node.ancestor.birth?.date?.year &&
-                    `b. ${node.ancestor.birth.date.year}`}
-                  {node.ancestor.marriages &&
-                    node.ancestor.marriages.length > 0 &&
-                    ` m. ${node.ancestor.marriages.length}`}
-                  {node.ancestor.naturalizations &&
-                    node.ancestor.naturalizations.length > 0 &&
-                    ` n. ${node.ancestor.naturalizations.length}`}
-                </text>
-
-                {/* Edit button */}
-                <g
-                  role="button"
-                  aria-label={`Edit ${displayName}`}
-                  tabIndex={0}
-                  style={{ cursor: "pointer" }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEditAncestor(node.ancestor);
-                  }}
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
+                  {/* Edit button */}
+                  <g
+                    role="button"
+                    aria-label={`Edit ${displayName}`}
+                    tabIndex={0}
+                    style={{ cursor: "pointer" }}
+                    onClick={(e) => {
                       e.stopPropagation();
                       onEditAncestor(node.ancestor);
-                    }
-                  }}
-                >
-                  <title>Edit {displayName}</title>
-                  <circle
-                    cx={node.x + nodeWidth / 2 - 15}
-                    cy={node.y - nodeHeight / 2 + 15}
-                    r="10"
-                    fill="#3498db"
-                  />
-                  <text
-                    x={node.x + nodeWidth / 2 - 15}
-                    y={node.y - nodeHeight / 2 + 19}
-                    textAnchor="middle"
-                    fontSize="10"
-                    fill="white"
-                    style={{ userSelect: "none" }}
+                    }}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.stopPropagation();
+                        onEditAncestor(node.ancestor);
+                      }
+                    }}
                   >
-                    ✎
-                  </text>
-                </g>
+                    <title>Edit {displayName}</title>
+                    <circle
+                      cx={node.x + nodeWidth / 2 - 15}
+                      cy={node.y - nodeHeight / 2 + 15}
+                      r="10"
+                      fill="#3498db"
+                    />
+                    <text
+                      x={node.x + nodeWidth / 2 - 15}
+                      y={node.y - nodeHeight / 2 + 19}
+                      textAnchor="middle"
+                      fontSize="10"
+                      fill="white"
+                      style={{ userSelect: "none" }}
+                    >
+                      ✎
+                    </text>
+                  </g>
 
-                {/* Delete button */}
-                <g
-                  role="button"
-                  aria-label={`Delete ${displayName}`}
-                  tabIndex={0}
-                  style={{ cursor: "pointer" }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteAncestor(node.ancestor.id);
-                  }}
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
+                  {/* Delete button */}
+                  <g
+                    role="button"
+                    aria-label={`Delete ${displayName}`}
+                    tabIndex={0}
+                    style={{ cursor: "pointer" }}
+                    onClick={(e) => {
                       e.stopPropagation();
                       onDeleteAncestor(node.ancestor.id);
-                    }
-                  }}
-                >
-                  <title>Delete {displayName}</title>
-                  <circle
-                    cx={node.x + nodeWidth / 2 - 15}
-                    cy={node.y + nodeHeight / 2 - 15}
-                    r="8"
-                    fill="#e74c3c"
-                  />
-                  <text
-                    x={node.x + nodeWidth / 2 - 15}
-                    y={node.y + nodeHeight / 2 - 11}
-                    textAnchor="middle"
-                    fontSize="10"
-                    fill="white"
-                    style={{ userSelect: "none" }}
+                    }}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.stopPropagation();
+                        onDeleteAncestor(node.ancestor.id);
+                      }
+                    }}
                   >
-                    ×
-                  </text>
-                </g>
+                    <title>Delete {displayName}</title>
+                    <circle
+                      cx={node.x + nodeWidth / 2 - 15}
+                      cy={node.y + nodeHeight / 2 - 15}
+                      r="8"
+                      fill="#e74c3c"
+                    />
+                    <text
+                      x={node.x + nodeWidth / 2 - 15}
+                      y={node.y + nodeHeight / 2 - 11}
+                      textAnchor="middle"
+                      fontSize="10"
+                      fill="white"
+                      style={{ userSelect: "none" }}
+                    >
+                      ×
+                    </text>
+                  </g>
 
-                {/* Add Child button (below node) */}
-                <g
-                  role="button"
-                  aria-label={`Add child to ${displayName}`}
-                  tabIndex={0}
-                  style={{ cursor: "pointer" }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAddChild(node.ancestor.id);
-                  }}
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
+                  {/* Add Child button (below node) */}
+                  <g
+                    role="button"
+                    aria-label={`Add child to ${displayName}`}
+                    tabIndex={0}
+                    style={{ cursor: "pointer" }}
+                    onClick={(e) => {
                       e.stopPropagation();
                       onAddChild(node.ancestor.id);
-                    }
-                  }}
-                >
-                  <title>Add child to {displayName}</title>
-                  <circle
-                    cx={node.x}
-                    cy={node.y + nodeHeight / 2 + 25}
-                    r="12"
-                    fill="#27ae60"
-                  />
-                  <text
-                    x={node.x}
-                    y={node.y + nodeHeight / 2 + 29}
-                    textAnchor="middle"
-                    fontSize="16"
-                    fill="white"
-                    style={{ userSelect: "none" }}
+                    }}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.stopPropagation();
+                        onAddChild(node.ancestor.id);
+                      }
+                    }}
                   >
-                    +
-                  </text>
+                    <title>Add child to {displayName}</title>
+                    <circle
+                      cx={node.x}
+                      cy={node.y + nodeHeight / 2 + 25}
+                      r="12"
+                      fill="#27ae60"
+                    />
+                    <text
+                      x={node.x}
+                      y={node.y + nodeHeight / 2 + 29}
+                      textAnchor="middle"
+                      fontSize="16"
+                      fill="white"
+                      style={{ userSelect: "none" }}
+                    >
+                      +
+                    </text>
+                  </g>
                 </g>
-              </g>
-            );
-          })}
+              );
+            })}
           </svg>
         </div>
       </div>
@@ -508,7 +512,7 @@ function buildTreeFromRoot(_root: Ancestor, allAncestors: Ancestor[]) {
   const GENERATION_HEIGHT = 180;
   const MIN_HORIZONTAL_SPACING = 200;
   const NODE_HEIGHT = 80;
-  const BUTTON_SPACE = 50; // Space for buttons above/below nodes
+  // const BUTTON_SPACE = 50; // Space for buttons above/below nodes
   const PADDING = 100; // Canvas padding
 
   // Group ancestors by generation
@@ -526,7 +530,7 @@ function buildTreeFromRoot(_root: Ancestor, allAncestors: Ancestor[]) {
   );
 
   const maxGeneration = Math.max(...Array.from(generations.keys()));
-  const minGeneration = Math.min(...Array.from(generations.keys()));
+  // const minGeneration = Math.min(...Array.from(generations.keys()));
 
   // Position nodes - use a generous base Y to ensure top button always has room
   // Start far enough down to accommodate the parent button above the highest generation
@@ -591,8 +595,8 @@ function buildTreeFromRoot(_root: Ancestor, allAncestors: Ancestor[]) {
   );
 
   // Find the actual min and max Y positions of nodes
-  const minNodeY = Math.min(...nodes.map(n => n.y));
-  const maxNodeY = Math.max(...nodes.map(n => n.y));
+  const minNodeY = Math.min(...nodes.map((n) => n.y));
+  const maxNodeY = Math.max(...nodes.map((n) => n.y));
 
   // Calculate the actual top and bottom bounds including buttons
   // Top button is at: minNodeY - NODE_HEIGHT/2 - 25 - 12 (button radius)
