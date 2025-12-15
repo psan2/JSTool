@@ -1,7 +1,7 @@
 import { FamilyHistoryData } from '../types';
+import { CURRENT_DATA_VERSION, migrateData } from '../utils/versionUtils';
 
 const STORAGE_KEY = 'family-history-data';
-const CURRENT_VERSION = '2.0.0';
 
 export class StorageService {
   // Load data from localStorage
@@ -43,7 +43,7 @@ export class StorageService {
     const now = Date.now();
     return {
       ancestors: [],
-      version: CURRENT_VERSION,
+      version: CURRENT_DATA_VERSION,
       createdAt: now,
       updatedAt: now
     };
@@ -84,8 +84,11 @@ export class StorageService {
       }
     }
 
+    // Migrate data if needed
+    const migratedData = migrateData(parsed);
+
     return {
-      ...parsed,
+      ...migratedData,
       updatedAt: Date.now()
     };
   }
