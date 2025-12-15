@@ -240,7 +240,6 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
               width: "100%",
               height: "auto",
               maxHeight: "80vh",
-              pointerEvents: "none",
             }}
           >
             {/* Render generation gridlines */}
