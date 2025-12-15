@@ -1,5 +1,5 @@
 {
-  "name": "family-history-citizenship-tool",
+  "name": "citizenship-tree-tool",
   "version": "2.0.0",
   "type": "module",
   "description": "A React-based tool to help users input family history to determine citizenship eligibility",
@@ -26,7 +26,13 @@
     "typescript": "^5.2.2",
     "vite": "^5.0.8"
   },
-  "keywords": ["family-history", "citizenship", "genealogy", "react"],
+  "keywords": [
+    "family-history",
+    "citizenship-tree",
+    "citizenship",
+    "genealogy",
+    "react"
+  ],
   "author": "",
   "license": "MIT"
 }
