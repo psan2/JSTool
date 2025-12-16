@@ -10,7 +10,7 @@ export function createLocationEvent(
   country: string
 ): LocationEvent | undefined {
   const hasDate = year || month || day;
-  const hasCountry = country && country.trim();
+  const hasCountry = country; // Don't trim during check - preserve spaces while typing
 
   if (!hasDate && !hasCountry) {
     return undefined;
@@ -27,7 +27,7 @@ export function createLocationEvent(
   }
 
   if (hasCountry) {
-    event.country = country.trim();
+    event.country = country.trim(); // Trim only on final save
   }
 
   return event;

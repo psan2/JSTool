@@ -1,5 +1,6 @@
 import { FamilyHistoryData } from '../types';
 import { CURRENT_DATA_VERSION, migrateData } from '../utils/versionUtils';
+import { sanitizeDataForExport } from '../utils/exportUtils';
 
 const STORAGE_KEY = 'family-history-data';
 
@@ -49,18 +50,20 @@ export class StorageService {
     };
   }
 
-  // Export data as JSON string
+  // Export data as JSON string (sanitized for privacy)
   static exportData(data: FamilyHistoryData): string {
-    return JSON.stringify(data);
+    const sanitizedData = sanitizeDataForExport(data);
+    return JSON.stringify(sanitizedData, null, 2);
   }
 
-  // Export data as base64 encoded string
+  // Export data as base64 encoded string (sanitized for privacy)
   static exportAsBase64(data: FamilyHistoryData): string {
-    const jsonString = this.exportData(data);
+    const sanitizedData = sanitizeDataForExport(data);
+    const jsonString = JSON.stringify(sanitizedData);
     return btoa(encodeURIComponent(jsonString));
   }
 
-  // Export data as shareable URL
+  // Export data as shareable URL (sanitized for privacy)
   static exportAsUrl(data: FamilyHistoryData): string {
     const base64Data = this.exportAsBase64(data);
     const currentUrl = new URL(window.location.href);

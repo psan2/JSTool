@@ -44,7 +44,7 @@ const EventEntry: React.FC<EventEntryProps> = ({
     const currentPartnerId = newPartnerId !== undefined ? newPartnerId : partnerId;
 
     const hasDate = currentYear || currentMonth || currentDay;
-    const hasCountry = currentCountry && currentCountry.trim();
+    const hasCountry = currentCountry; // Don't trim - preserve spaces
     const hasPartner = currentPartnerId && currentPartnerId.trim();
 
     const newEvent: LocationEvent = {};
@@ -58,7 +58,7 @@ const EventEntry: React.FC<EventEntryProps> = ({
     }
 
     if (hasCountry) {
-      newEvent.country = currentCountry.trim();
+      newEvent.country = currentCountry;
     }
 
     if (hasPartner) {

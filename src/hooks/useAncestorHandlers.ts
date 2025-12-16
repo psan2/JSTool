@@ -15,6 +15,7 @@ export function useAncestorHandlers() {
 
   const [isAncestorModalOpen, setIsAncestorModalOpen] = useState(false);
   const [editingAncestor, setEditingAncestor] = useState<Ancestor | null>(null);
+  const [pendingNewAncestorId, setPendingNewAncestorId] = useState<string | null>(null);
 
   const handleAddAncestor = () => {
     setEditingAncestor(null);
@@ -202,6 +203,7 @@ export function useAncestorHandlers() {
 
       setIsAncestorModalOpen(false);
       setEditingAncestor(null);
+      setPendingNewAncestorId(null); // Clear pending ID on successful save
     } catch (error) {
       console.error("Error saving ancestor:", error);
       showNotification("Failed to save person.", "error");
@@ -250,6 +252,7 @@ export function useAncestorHandlers() {
       }
     }
 
+    setPendingNewAncestorId(newParent.id); // Mark as pending
     setEditingAncestor(newParent);
     setIsAncestorModalOpen(true);
   };
@@ -272,11 +275,18 @@ export function useAncestorHandlers() {
     const result = storage.addAncestor(childData);
     const newChild = result.ancestor;
 
+    setPendingNewAncestorId(newChild.id); // Mark as pending
     setEditingAncestor(newChild);
     setIsAncestorModalOpen(true);
   };
 
   const handleCloseModal = () => {
+    // If there's a pending new ancestor that wasn't saved, delete it
+    if (pendingNewAncestorId) {
+      storage.deleteAncestor(pendingNewAncestorId);
+      setPendingNewAncestorId(null);
+    }
+
     setIsAncestorModalOpen(false);
     setEditingAncestor(null);
   };

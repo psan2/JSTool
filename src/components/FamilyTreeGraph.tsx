@@ -366,24 +366,55 @@ const FamilyTreeGraph: React.FC<FamilyTreeGraphProps> = ({
                     {displayName}
                   </text>
 
-                  {/* Additional info line */}
-                  <text
-                    x={node.x}
-                    y={node.y + 8}
-                    textAnchor="middle"
-                    fontSize="11"
-                    fill="#7f8c8d"
-                    style={{ userSelect: "none" }}
-                  >
-                    {node.ancestor.birth?.date?.year &&
-                      `b. ${node.ancestor.birth.date.year}`}
-                    {node.ancestor.marriages &&
-                      node.ancestor.marriages.length > 0 &&
-                      ` m. ${node.ancestor.marriages.length}`}
-                    {node.ancestor.naturalizations &&
-                      node.ancestor.naturalizations.length > 0 &&
-                      ` n. ${node.ancestor.naturalizations.length}`}
-                  </text>
+                  {/* Additional info lines - each on separate line */}
+                  {node.ancestor.birth?.date?.year && (
+                    <text
+                      x={node.x}
+                      y={node.y + 8}
+                      textAnchor="middle"
+                      fontSize="11"
+                      fill="#7f8c8d"
+                      style={{ userSelect: "none" }}
+                    >
+                      b. {node.ancestor.birth.date.year}
+                    </text>
+                  )}
+                  {node.ancestor.marriages && node.ancestor.marriages.length > 0 && (
+                    <text
+                      x={node.x}
+                      y={node.y + 20}
+                      textAnchor="middle"
+                      fontSize="11"
+                      fill="#7f8c8d"
+                      style={{ userSelect: "none" }}
+                    >
+                      m. {node.ancestor.marriages[0].date?.year || node.ancestor.marriages.length}
+                    </text>
+                  )}
+                  {node.ancestor.naturalizations && node.ancestor.naturalizations.length > 0 && (
+                    <text
+                      x={node.x}
+                      y={node.y + 32}
+                      textAnchor="middle"
+                      fontSize="11"
+                      fill="#7f8c8d"
+                      style={{ userSelect: "none" }}
+                    >
+                      n. {node.ancestor.naturalizations[0].date?.year || node.ancestor.naturalizations.length}
+                    </text>
+                  )}
+                  {node.ancestor.death?.date?.year && (
+                    <text
+                      x={node.x}
+                      y={node.y + 44}
+                      textAnchor="middle"
+                      fontSize="11"
+                      fill="#7f8c8d"
+                      style={{ userSelect: "none" }}
+                    >
+                      d. {node.ancestor.death.date.year}
+                    </text>
+                  )}
 
                   {/* Edit button */}
                   <g
