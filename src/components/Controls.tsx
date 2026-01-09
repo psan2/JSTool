@@ -1,8 +1,10 @@
 import React from 'react';
+import AddAncestorButton from './AddAncestorButton';
 import ExportButton from './ExportButton';
 
 interface ControlsProps {
   onAddAncestor: () => void;
+  onBulkEdit: () => void;
   onImport: () => void;
   onExportUrl: () => void;
   onExportBase64: () => void;
@@ -12,6 +14,7 @@ interface ControlsProps {
 
 const Controls: React.FC<ControlsProps> = ({
   onAddAncestor,
+  onBulkEdit,
   onImport,
   onExportUrl,
   onExportBase64,
@@ -20,9 +23,10 @@ const Controls: React.FC<ControlsProps> = ({
 }) => {
   return (
     <div className="controls">
-      <button className="btn btn-primary" onClick={onAddAncestor}>
-        Add Ancestor
-      </button>
+      <AddAncestorButton
+        onAddAncestor={onAddAncestor}
+        onBulkEdit={onBulkEdit}
+      />
       <button className="btn btn-secondary" onClick={onImport}>
         Import Data
       </button>

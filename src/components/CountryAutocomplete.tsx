@@ -4,6 +4,8 @@ interface CountryAutocompleteProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  inputStyle?: React.CSSProperties;
+  name?: string;
 }
 
 // Modern countries list for autocomplete
@@ -205,6 +207,8 @@ const CountryAutocomplete: React.FC<CountryAutocompleteProps> = ({
   value,
   onChange,
   placeholder,
+  inputStyle,
+  name,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [filteredCountries, setFilteredCountries] = useState<string[]>([]);
@@ -268,6 +272,7 @@ const CountryAutocomplete: React.FC<CountryAutocompleteProps> = ({
       <input
         ref={inputRef}
         type="text"
+        name={name}
         value={value}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
@@ -283,6 +288,7 @@ const CountryAutocomplete: React.FC<CountryAutocompleteProps> = ({
           borderRadius: "4px",
           fontSize: "14px",
           transition: "border-color 0.2s ease",
+          ...inputStyle,
         }}
         onFocus={() => {
           if (value && filteredCountries.length > 0) {
@@ -295,17 +301,17 @@ const CountryAutocomplete: React.FC<CountryAutocompleteProps> = ({
         <div
           ref={dropdownRef}
           style={{
-            position: "absolute",
-            top: "100%",
-            left: 0,
-            right: 0,
+            position: "fixed",
+            top: inputRef.current ? inputRef.current.getBoundingClientRect().bottom : 0,
+            left: inputRef.current ? inputRef.current.getBoundingClientRect().left : 0,
+            width: inputRef.current ? inputRef.current.getBoundingClientRect().width : "auto",
             backgroundColor: "white",
             border: "1px solid #ddd",
             borderTop: "none",
             borderRadius: "0 0 4px 4px",
             maxHeight: "200px",
             overflowY: "auto",
-            zIndex: 1000,
+            zIndex: 10000,
             boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
           }}
         >

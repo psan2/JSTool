@@ -4,9 +4,10 @@ interface ModalProps {
   title: string;
   children: React.ReactNode;
   onClose: () => void;
+  maxWidth?: string;
 }
 
-const Modal: React.FC<ModalProps> = ({ title, children, onClose }) => {
+const Modal: React.FC<ModalProps> = ({ title, children, onClose, maxWidth = "600px" }) => {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -26,7 +27,7 @@ const Modal: React.FC<ModalProps> = ({ title, children, onClose }) => {
 
   return (
     <div className="modal show" onClick={handleBackdropClick}>
-      <div className="modal-content">
+      <div className="modal-content" style={{ maxWidth }}>
         <div className="modal-header">
           <h2>{title}</h2>
           <button className="close" onClick={onClose}>

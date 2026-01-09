@@ -1,5 +1,6 @@
 import { useState } from "react";
 import AncestorModal from "./components/AncestorModal";
+import BulkEditModal from "./components/BulkEditModal";
 import Controls from "./components/Controls";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import FamilyTreeGraph from "./components/FamilyTreeGraph";
@@ -9,6 +10,7 @@ import NotificationContainer from "./components/NotificationContainer";
 import { useFamilyTreeStorage } from "./hooks/useFamilyTreeStorage";
 import { useNotification } from "./hooks/useNotification";
 import { useAncestorHandlers } from "./hooks/useAncestorHandlers";
+import { Ancestor } from "./types";
 
 function App() {
   const storage = useFamilyTreeStorage();
@@ -16,6 +18,7 @@ function App() {
   const ancestorHandlers = useAncestorHandlers();
 
   const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
+  const [isBulkEditModalOpen, setIsBulkEditModalOpen] = useState(false);
 
   // Handle any storage errors
   if (storage.error) {
@@ -92,6 +95,7 @@ function App() {
 
         <Controls
           onAddAncestor={ancestorHandlers.handleAddAncestor}
+          onBulkEdit={() => setIsBulkEditModalOpen(true)}
           onImport={() => setIsImportExportModalOpen(true)}
           onExportUrl={handleCopyUrl}
           onExportBase64={handleCopyData}
@@ -113,6 +117,21 @@ function App() {
             availablePartners={storage.ancestors}
             onSave={ancestorHandlers.handleSaveAncestor}
             onClose={ancestorHandlers.handleCloseModal}
+          />
+        )}
+
+        {isBulkEditModalOpen && (
+          <BulkEditModal
+            ancestors={storage.ancestors}
+            onSave={(updatedAncestors: Ancestor[]) => {
+              if (storage.batchUpdateAncestors(updatedAncestors)) {
+                showNotification("Bulk changes saved successfully!", "success");
+                setIsBulkEditModalOpen(false);
+              } else {
+                showNotification("Failed to save bulk changes.", "error");
+              }
+            }}
+            onClose={() => setIsBulkEditModalOpen(false)}
           />
         )}
 
